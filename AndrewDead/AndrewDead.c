@@ -117,6 +117,9 @@ int main(){
         printf("It's "BLUE"%s's"RESET" turn\n", P[player_turn%2].name);
         option = MainPmenu(P);
         switch (option){
+            case 1:
+
+
             case 3:
                 Rest(&P[player_turn%2]);
                 break;
