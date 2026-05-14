@@ -1,12 +1,13 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <threads.h>
 #include <time.h>
 #include <unistd.h>
 #include <math.h>
 #include <string.h>
-#define BOLD      "\x1b[1m"
 #define RESET     "\x1b[0m"
+#define BOLD      "\x1b[1m"
 #define RED       "\x1b[31m"
 #define GREEN     "\x1b[32m"
 #define YELLOW    "\x1b[33m"
@@ -69,7 +70,7 @@ int FullInventoryChecker(struct Player x, int type){
                 }
                 break;
             case 2:
-                if (x.Pdfense->id!=0){
+                if (x.Pdfense[i].id!=0){
                     items++;
                 }
                 break;
@@ -78,19 +79,38 @@ int FullInventoryChecker(struct Player x, int type){
     return items-2;
 }
 
+int where_in_inventory(struct Player x, struct Weapon w){
+    int in_inventory=0;
+    for (int i=0;i<6;i++){
+        in_inventory++;
+        if (w.id==x.Pweapon[i].id){
+            break;
+        }
+    }
+    return in_inventory;
+}
+
+int item_in_inventory(struct Player x, struct Weapon w){
+    int in_inventory=0;
+    for (int i=0;i<6;i++){
+        in_inventory++;
+        if (w.id==x.Pweapon[i].id){
+            break;
+        }
+    }
+    return in_inventory;
+}
 int Capitalism(struct Player *x, struct Weapon w[]){
     int option=0;
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
     printf("\n%-3s%-20s%-10s%-10s%-10s%-20s%s\n","", "Name", "Type", "Damage", "Crit %", "Stamina Cost", "Price");
     for (int i=0; i<16; i++){
-        int owened=1;
-        for (int n=0;n<6;n++){
-            if (strcmp(x->Pweapon[n].Name, w[i].Name)==0){
-                owened--;
-            }
+        int notowened=1;
+        if (where_in_inventory(*x, w[i])<6){
+            notowened--;
         }
-        if (owened==1){
+        if (notowened==1){
             printf("%-3i%-20s%-10s%-10i%-10i%-20i%i\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].stamina_cost, w[i].money_cost);
         }
         else{
@@ -105,25 +125,31 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     printf("What would you like to do with "BLUE"%s?\n"RESET, w[option-1].Name);
     printf("Pick an option below \n%-30s%s\n", "1. Buy", "2. Go back");
-    int in_inventory=0;
     for(int i=0; i<6; i++){
         if (w[option-1].id==x->Pweapon[i].id){
-            in_inventory++;
             printf("3. Sell\n");
         }
     }
     int doOption=0;
     scanf("%i", &doOption);
     getchar();
-    if (doOption == 2){
-        return 1;
+
+    if (doOption == 2 && where_in_inventory(*x, w[option-1])<7){
+        printf("You have sold "BLUE"%s"RESET" and retained half it's value of "YELLOW"%i\n"RESET, w[option-1].Name, w[option-1].money_cost/2);
+        printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold + w[option-1].money_cost/2);
+        x->gold += w[option-1].money_cost/2;
+        x->Pweapon[where_in_inventory(*x, w[option-1])-1]->id=0;
+        getchar();
     }
-    else if (doOption == 1  && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, 1)<6){
+    else if (doOption == 1  && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, 1)<6 && item_in_inventory(*x, w[option-1])==0){
         printf("You have purchased "BLUE"%s\n"RESET, w[option-1].Name);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold - w[option-1].money_cost);
         x->gold -= w[option-1].money_cost;
         x->Pweapon[FullInventoryChecker(*x, 1)]=w[option-1];
         getchar();
+    }
+    else if (doOption==2) {
+        return 1;
     }
     else if (w[option-1].money_cost > x->gold){
         printf("You do not have enough gold to buy this item.\n");
@@ -150,6 +176,7 @@ void EquipItem(struct Player *P){
 }
 
 void UseItem(struct Player *P, struct Weapon *w[]){
+    (void)w;
     if (P->equipped_weapon.Name[0] == '\0'){
         printf("You have no equipped item.\n");
     }
@@ -169,15 +196,10 @@ int main(){
         {},{},
         {},{},
     };
-    struct Defense shield[3] = {
-        {},
-    };
-    struct Defense teleport[2] = {
-        {},
-    };
+
     struct Player P[2] = {
-        {"Player1", 100, 100, 500, melee[0],melee[1], 0},
-        {"Player2", 100, 100, 550, melee[0],melee[1], 0},
+        [0] = {.name = "Player1", .health = 100, .stamina = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        [1] = {.name = "Player2", .health = 100, .stamina = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
