@@ -125,6 +125,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     printf("What would you like to do with "BLUE"%s?\n"RESET, w[option-1].Name);
     printf("Pick an option below \n%-30s%s\n", "1. Buy", "2. Go back");
+    printf("%i", item_in_inventory(*x, w[option-1]));
     for(int i=0; i<6; i++){
         if (w[option-1].id==x->Pweapon[i].id){
             printf("3. Sell\n");
@@ -138,10 +139,10 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         printf("You have sold "BLUE"%s"RESET" and retained half it's value of "YELLOW"%i\n"RESET, w[option-1].Name, w[option-1].money_cost/2);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold + w[option-1].money_cost/2);
         x->gold += w[option-1].money_cost/2;
-        x->Pweapon[where_in_inventory(*x, w[option-1])-1]->id=0;
+        x->Pweapon[where_in_inventory(*x, w[option-1])-1].id=0;
         getchar();
     }
-    else if (doOption == 1  && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, 1)<6 && item_in_inventory(*x, w[option-1])==0){
+    else if (doOption == 1  && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, 1)<6 && item_in_inventory(*x, w[option-1])>=6){
         printf("You have purchased "BLUE"%s\n"RESET, w[option-1].Name);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold - w[option-1].money_cost);
         x->gold -= w[option-1].money_cost;
