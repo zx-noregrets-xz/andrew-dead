@@ -319,7 +319,8 @@ void Rest(struct Player *x){
 
 int FullInventoryChecker(struct Player x, int type){
     int items=0;
-    for (int i=0;i<6;i++){
+    int limit = (type == 2) ? 4 : 6;
+    for (int i=0; i<limit; i++){
         switch (type) {
             case 1:
                 if (x.Pweapon[i].id==0){
@@ -392,7 +393,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     scanf("%i", &doOption);
     getchar();
 
-    if (doOption == 2 && where_in_inventory(*x, w[option-1])<7){
+    if (doOption == 3 && where_in_inventory(*x, w[option-1])<7){
         printf("You have sold "BLUE"%s"RESET" and retained half it's value of "YELLOW"%i\n"RESET, w[option-1].Name, w[option-1].money_cost/2);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold + w[option-1].money_cost/2);
         x->gold += w[option-1].money_cost/2;
@@ -433,18 +434,23 @@ void EquipItem(struct Player *P){
     getchar();
 }
 
-void UseWeaponItem(struct Player *P[], int player_turn, struct Weapon *w[]){
-    float total_damage=P[player_turn%2]->equipped_weapon.damage;
-    if (P[player_turn%2]->equipped_weapon.crit_chance>rb(1,100)){
-        total_damage*=2;
+void UseWeaponItem(struct Player *P, int player_turn){
+    int attacker = player_turn % 2;
+    int defender = (player_turn + 1) % 2;
+    float total_damage = P[attacker].equipped_weapon.damage;
+    if (P[attacker].equipped_weapon.crit_chance > rb(1,100)){
+        total_damage *= 2;
     }
-    if (P[player_turn+1%2]->Pdfense->id<0){
-        total_damage -= total_damage * P[player_turn+1%2]->Pdfense->damage_reduction*100;
-        P[player_turn+1%2]->health-=total_damage;
-        printf(BLUE"%s"RESET" did "RED"%i"RESET" damage to "BLUE"%s"RESET".\n "BLUE"%s"RESET" blocked "BLUE"%i")
+    if (P[defender].equipped_defense.id != 0){
+        float reduction = P[defender].equipped_defense.damage_reduction / 100.0f;
+        total_damage -= total_damage * reduction;
+        P[defender].health -= total_damage;
+        printf(BLUE"%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n"BLUE"%s"RESET" blocked "BLUE"%i percent"RESET"\n",
+            P[attacker].name, total_damage, P[defender].name,
+            P[defender].name, P[defender].equipped_defense.damage_reduction);
     }
     else{
-        P[player_turn+1%2]->health-=total_damage;
+        P[defender].health -= total_damage;
     }
 }
 
@@ -485,6 +491,9 @@ int main(){
         printf("It's "BLUE"%s's"RESET" turn\n", P[player_turn%2].name);
         option = MainPmenu(P);
         switch (option){
+            case 1:
+            UseWeaponItem(P, player_turn);
+                break;
             case 2:
                 Clear();
                 EquipItem(&P[player_turn%2]);
@@ -504,7 +513,7 @@ int main(){
                 getchar();
                 break;
         }
-        if (P[player_turn%2].times_rested<2){
+        if (P[player_turn%2].times_rested>=2){
             P[player_turn%2].times_rested=0;
         }
         player_turn++;
