@@ -496,10 +496,10 @@ int main(){
     getchar();
     Clear();
 
-    printf("Player 1, enter your name:\n");
-    scanf("%s", P[0].name);
-    printf("\nPlayer 2, enter your name:\n");
-    scanf("%s", P[1].name);
+    //printf("Player 1, enter your name:\n");
+    //scanf("%s", P[0].name);
+    //printf("\nPlayer 2, enter your name:\n");
+    //scanf("%s", P[1].name);
 
     while(1){
         Clear();
@@ -521,7 +521,7 @@ int main(){
                     Clear();
                     Capitalism(&P[player_turn%2], melee);
                 }
-                continue;
+                break;
             default:
                 printf("\nWrong, stupid\nMake sure you enter AN ACUTAL OPTION, i'm skipping your turn");
                 getchar();
