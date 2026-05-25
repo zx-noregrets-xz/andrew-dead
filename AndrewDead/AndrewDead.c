@@ -12,6 +12,7 @@
 #define GREEN     "\x1b[32m"
 #define YELLOW    "\x1b[33m"
 #define BLUE      "\x1b[34m"
+#define CYAN      "\x1b[36m"
 #define ROWS 7
 #define COLS 6
 const char *letters[26][ROWS] = {
@@ -305,8 +306,8 @@ int SignsOfLife(struct Player x){
 int MainPmenu(struct Player x){
     int option=0;
     printf(BOLD"|=----------------==MAIN-MENU==----------------=|\n\n"RESET);
+    printf("It's "CYAN"%s's"RESET" turn\n\n", x.name);
     printf(RED"Health:"RESET" %g    "YELLOW"Gold:"RESET" %i\n\n", x.health, x.gold);
-    printf("It's "BLUE"%s's"RESET" turn\n\n", x.name);
     printf(BOLD"Pick an option below \n%-30s%s\n%-30s%s\n", "1. Use Equiped Item", "2. Equip an Item", "3. Rest", "4. Visit Shop");
     printf("\n|=----------------======-======----------------=|\n"RESET);
     scanf("%i", &option);
@@ -317,10 +318,13 @@ int MainPmenu(struct Player x){
 void Rest(struct Player *x){
     Clear();
     x->gold += 100 + 50 * (x->times_rested);
-    x->health += 50;
-    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 50 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n", 100 + 50*(x->times_rested), x->gold, x->health);
+    x->health += 7;
+    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 7 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n", 100 + 50 * (x->times_rested), x->gold, x->health);
     getchar();
     x->times_rested++;
+    if (x->times_rested>3){
+        x->times_rested=0;
+    }
 }
 
 int FullInventoryChecker(struct Player x, int type){
@@ -369,7 +373,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
     printf("\n%-3s%-20s%-10s%-10s%-10s%s\n","", "Name", "Type", "Damage", "Crit %", "Price");
-    for (int i=0; i<16; i++){
+    for (int i=0; i<17; i++){
         int notowened=1;
         if (where_in_inventory(*x, w[i])<6){
             notowened--;
@@ -424,9 +428,9 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     return 0;
 }
 
-void EquipItem(struct Player *P){
+int EquipItem(struct Player *P){
     int option=0;
-    printf("Which item would you like to equip?\n");
+    printf("Which item would you like to equip?\nEnter 0 to go back\n");
     for (int i=0; i<6; i++){
         if (P->Pweapon[i].Name[0] != '\0'){
             printf("%i. %s\n", i+1, P->Pweapon[i].Name);
@@ -434,9 +438,11 @@ void EquipItem(struct Player *P){
     }
     scanf("%i", &option);
     getchar();
+    if (option<=0){return 2;}
     printf("You have eqquped "BOLD"%s"RESET, P->Pweapon[option-1].Name);
     P->equipped_weapon = P->Pweapon[option-1];
     getchar();
+    return 1;
 }
 
 int UseWeaponItem(struct Player *P, int player_turn){
@@ -450,6 +456,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
     }
     if (P[attacker].equipped_weapon.crit_chance > rb(1,100)){
         total_damage *= 2;
+        printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.", P[attacker].name);
     }
     if (P[defender].equipped_defense.id != 0){
         float reduction = P[defender].equipped_defense.damage_reduction / 100.0;
@@ -473,14 +480,31 @@ int main(){
     int option = 0;
     // Define all weapons and players
     struct Weapon melee[17] = {
-        {"Fists", "Blunt", 1, 5, 5, 0}, {"Rusty Sword", "Sharp", 2, 15, 6, 0},
-        {"Metal Hatchet", "Sharp", 3, 20, 6, 480}, {.Name = "Person Beater", .Type = "Blunt", .damage = 25, .id = 4, .crit_chance = 50, .money_cost = 500},
-        {.Name = "Pipe Bomb", .Type = "Explosive", .damage = 40, .id = 5, .crit_chance = 1, .money_cost = 800},{.Name = "Rubber Ducky", .Type = "Blunt", .damage = 99, .id = 6, .crit_chance = 50, .money_cost = 674},
-        {},{},
-        {},{},
-        {},{},
-        {},{},
-        {},{},
+    //   Name               Type            ID    Damage    CritChance      Cost
+        {"Fists",           "Blunt",        1,    5,        5,              0,},
+        {"Rusty Sword",     "Sharp",        2,    12,       8,              0,},
+        {"Kitchen Knife",   "Sharp",        7,    14,      22,            200,},
+        {"Wooden Club",     "Blunt",        8,    16,      15,            280,},
+        {"Metal Hatchet",   "Sharp",        3,    18,      12,            320,},
+        {"Baseball Bat",    "Blunt",        9,    20,      18,            400,},
+        {"Trick Knife",     "Sharp",       10,    20,      28,            480,},
+        {"Person Beater",   "Blunt",        4,    22,      20,            520,},
+        {"Murder Of Crowbars","Blunt",     11,    24,      15,            580,},
+        {"Pipe Bomb",       "Explosive",    5,    35,       5,            750,},
+        {"Crossedbow",      "Ranged",      12,    28,      22,            850,},
+        {"Leviathan Axe",   "Sharp",       13,    32,      18,           1050,},
+        {"Rubber Ducky",    "Blunt",        6,    50,      25,           1600,},
+        {"Katana",          "Sharp",       14,    36,      35,           1800,},
+        {"Chainsword",      "Sharp",       15,    45,      12,           2400,},
+        {"Sledgehammer",    "Blunt",       16,    42,      18,           2800,},
+        {"BoomBoom Gun",    "Explosive",   17,    60,       5,           3500,},
+    };
+    struct Weapon Defense[4] = {
+    //   Name                  Type            ID   damage   Cost  Reduction
+        {"Cardboard Shield",   "Light",       18,    0,       250,   10},
+        {"Wooden Shield",      "Medium",      19,    0,       500,   20},
+        {"Metal Shield",       "Heavy",       20,    0,       950,   30},
+        {"Kevlar Vest",        "Special",     21,    0,      1700,   45},
     };
 
     struct Player P[2] = {
@@ -510,7 +534,7 @@ int main(){
                 break;
             case 2:
                 Clear();
-                EquipItem(&P[player_turn%2]);
+                if (EquipItem(&P[player_turn%2])==2){player_turn--;}
                 break;
             case 3:
                 Rest(&P[player_turn%2]);
@@ -528,9 +552,6 @@ int main(){
                 break;
         }
         player_turn++;
-        if (P[player_turn%2].times_rested>=2){
-            P[player_turn%2].times_rested=0;
-        }
         if (SignsOfLife(P[player_turn%2])==0){
             printf(RED"%s is DEAD"RESET GREEN"\n%s WINS!!!!!!!!", P[player_turn%2].name, P[(player_turn-1)%2].name);
             getchar();
