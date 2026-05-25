@@ -368,6 +368,7 @@ int item_in_inventory(struct Player x, struct Weapon w){
     }
     return in_inventory;
 }
+
 int Capitalism(struct Player *x, struct Weapon w[]){
     int option=0;
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
@@ -456,7 +457,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
     }
     if (P[attacker].equipped_weapon.crit_chance > rb(1,100)){
         total_damage *= 2;
-        printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.", P[attacker].name);
+        printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.\n", P[attacker].name);
     }
     if (P[defender].equipped_defense.id != 0){
         float reduction = P[defender].equipped_defense.damage_reduction / 100.0;
@@ -509,7 +510,7 @@ int main(){
 
     struct Player P[2] = {
         {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
-        {.name = "TURG", .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "TURG", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
@@ -551,6 +552,7 @@ int main(){
                 getchar();
                 break;
         }
+        P[player_turn%2].gold+=10;
         player_turn++;
         if (SignsOfLife(P[player_turn%2])==0){
             printf(RED"%s is DEAD"RESET GREEN"\n%s WINS!!!!!!!!", P[player_turn%2].name, P[(player_turn-1)%2].name);
