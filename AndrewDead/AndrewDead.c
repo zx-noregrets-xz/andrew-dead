@@ -2,10 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <threads.h>
-#include <time.h>
 #include <unistd.h>
-#include <math.h>
-#include <string.h>
 #define RESET     "\x1b[0m"
 #define BOLD      "\x1b[1m"
 #define RED       "\x1b[31m"
@@ -379,18 +376,33 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         if (where_in_inventory(*x, w[i])<6){
             notowened--;
         }
-        if (notowened==1){
-            printf("%-3i%-20s%-10s%-10i%-10i%i\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].money_cost);
+        if (notowened==1 && w[i].money_cost<=x->gold){
+            printf("%-3i%-20s%-10s%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].money_cost);
+        }
+        else if (notowened==1 && w[i].money_cost>x->gold){
+            printf("%-3i%-20s%-10s%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, "OWNED");
+            printf("%-3i%-20s%-10s%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, BLUE"OWNED"RESET);
+        }
+    }
+    for (int i=17; i<21; i++){
+        int notowened=1;
+        if (where_in_inventory(*x, w[i])<4){
+            notowened--;
+        }
+        if (notowened==1){
+            printf("%-3i%-20s%-10s%-10i%i\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].money_cost);
+        }
+        else{
+            printf("%-3i%-20s%-10s%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, "OWNED");
         }
     }
     printf("Enter 0 to leave the shop\n\n");
     scanf("%i", &option);
     getchar();
     if (option==0){
-        return 0;
+        return 1;
     }
     printf("What would you like to do with "BLUE"%s?\n"RESET, w[option-1].Name);
     printf("Pick an option below \n%-30s%s\n", "1. Buy", "2. Go back");
@@ -488,11 +500,11 @@ int main(){
         {"Wooden Club",     "Blunt",        8,    16,      15,            280,},
         {"Metal Hatchet",   "Sharp",        3,    18,      12,            320,},
         {"Baseball Bat",    "Blunt",        9,    20,      18,            400,},
-        {"Trick Knife",     "Sharp",       10,    20,      28,            480,},
+        {"Trick Knife",     "Sharp",       10,    15,      28,            480,},
         {"Person Beater",   "Blunt",        4,    22,      20,            520,},
         {"Murder Of Crowbars","Blunt",     11,    24,      15,            580,},
         {"Pipe Bomb",       "Explosive",    5,    35,       5,            750,},
-        {"Crossedbow",      "Ranged",      12,    28,      22,            850,},
+        {"Crossedbow",      "Ranged",      12,    36,      22,            950,},
         {"Leviathan Axe",   "Sharp",       13,    32,      18,           1050,},
         {"Rubber Ducky",    "Blunt",        6,    50,      25,           1600,},
         {"Katana",          "Sharp",       14,    36,      35,           1800,},
@@ -542,10 +554,7 @@ int main(){
                 break;
             case 4:
                 Clear();
-                while (Capitalism(&P[player_turn%2], melee) == 1){
-                    Clear();
-                    Capitalism(&P[player_turn%2], melee);
-                }
+                if (Capitalism(&P[player_turn%2], melee)==1){player_turn--;}
                 break;
             default:
                 printf("\nWrong, stupid\nMake sure you enter AN ACUTAL OPTION, i'm skipping your turn");
@@ -555,7 +564,7 @@ int main(){
         P[player_turn%2].gold+=10;
         player_turn++;
         if (SignsOfLife(P[player_turn%2])==0){
-            printf(RED"%s is DEAD"RESET GREEN"\n%s WINS!!!!!!!!", P[player_turn%2].name, P[(player_turn-1)%2].name);
+            printf(RED"%s is DEAD"GREEN"\n%s WINS!!!!!!!!", P[player_turn%2].name, P[(player_turn-1)%2].name);
             getchar();
             break;
         }
