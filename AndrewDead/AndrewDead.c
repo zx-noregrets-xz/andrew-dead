@@ -557,7 +557,7 @@ int main(){
                 if (Capitalism(&P[player_turn%2], melee)==1){player_turn--;}
                 break;
             default:
-                printf("\nWrong, stupid\nMake sure you enter AN ACUTAL OPTION, i'm skipping your turn");
+                printf("\nWrong, stupid!\nMake sure you enter AN ACUTAL OPTION, i'm skipping ur turn,\nyou waste of matter.");
                 getchar();
                 break;
         }
