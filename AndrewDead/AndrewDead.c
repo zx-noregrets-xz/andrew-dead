@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -283,7 +284,6 @@ struct Weapon{
     int damage_reduction;
 };
 
-
 struct Player{
     char name[50];
     float health;
@@ -325,55 +325,46 @@ void Rest(struct Player *x){
 }
 
 int FullInventoryChecker(struct Player x, int type){
-    int items=0;
-    int limit = (type == 2) ? 4 : 6;
-    for (int i=0; i<limit; i++){
-        switch (type) {
-            case 1:
-                if (x.Pweapon[i].id==0){
-                    items++;
-                }
-                break;
-            case 2:
-                if (x.Pdfense[i].id!=0){
-                    items++;
-                }
-                break;
+    int limit = (type == 4) ? 4 : 6;
+    for (int i = 0; i < limit; i++){
+        if (type == 4){
+            if (x.Pdfense[i].id == 0){
+                return i;
+            }
+        } else {
+            if (x.Pweapon[i].id == 0){
+                return i;
+            }
         }
     }
-    return items-2;
+    return -1;
 }
 
-int where_in_inventory(struct Player x, struct Weapon w){
-    int in_inventory=0;
-    for (int i=0;i<6;i++){
-        in_inventory++;
-        if (w.id==x.Pweapon[i].id){
-            break;
+int item_in_inventory(struct Player x, struct Weapon w, int type){
+    int limit = (type == 4) ? 4 : 6;
+    for (int i = 0; i < limit; i++){
+        if (type == 4){
+            if (w.id == x.Pdfense[i].id){
+                return i;
+            }
+        } else {
+            if (w.id == x.Pweapon[i].id){
+                return i;
+            }
         }
     }
-    return in_inventory;
-}
-
-int item_in_inventory(struct Player x, struct Weapon w){
-    int in_inventory=0;
-    for (int i=0;i<6;i++){
-        in_inventory++;
-        if (w.id==x.Pweapon[i].id){
-            break;
-        }
-    }
-    return in_inventory;
+    return -1;
 }
 
 int Capitalism(struct Player *x, struct Weapon w[]){
     int option=0;
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
+    printf(CYAN"\n\nOffensive items"RESET);
     printf("\n%-3s%-20s%-10s%-10s%-10s%s\n","", "Name", "Type", "Damage", "Crit %", "Price");
     for (int i=0; i<17; i++){
         int notowened=1;
-        if (where_in_inventory(*x, w[i])<6){
+        if (item_in_inventory(*x, w[i], 6)>=0){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
@@ -386,47 +377,71 @@ int Capitalism(struct Player *x, struct Weapon w[]){
             printf("%-3i%-20s%-10s%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, BLUE"OWNED"RESET);
         }
     }
+    printf(CYAN"\ndefeeisive items\n"RESET);
     for (int i=17; i<21; i++){
         int notowened=1;
-        if (where_in_inventory(*x, w[i])<4){
+        if (item_in_inventory(*x, w[i], 4)>=0){
             notowened--;
         }
         if (notowened==1){
             printf("%-3i%-20s%-10s%-10i%i\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, "OWNED");
+            printf("%-3i%-20s%-10s%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, BLUE"OWNED"RESET);
         }
     }
     printf("Enter 0 to leave the shop\n\n");
     scanf("%i", &option);
     getchar();
+    int type=0;
     if (option==0){
         return 1;
     }
+    else if (option>=18 && option <=21){
+        type = 4;
+    }
+    else if (option>=1 && option <=17){
+        type = 6;
+    }
+    else{
+        printf("WRONG, stupid. I told you to pick an option.");
+        getchar();
+        return 1;
+    }
+    printf(RED"\n%i\n"RESET, item_in_inventory(*x, w[option-1], type));
     printf("What would you like to do with "BLUE"%s?\n"RESET, w[option-1].Name);
     printf("Pick an option below \n%-30s%s\n", "1. Buy", "2. Go back");
-    for(int i=0; i<6; i++){
-        if (w[option-1].id==x->Pweapon[i].id){
-            printf("3. Sell\n");
-        }
+    if (item_in_inventory(*x, w[option-1], type)>=0){
+        printf("3. Sell\n");
     }
     int doOption=0;
     scanf("%i", &doOption);
     getchar();
 
-    if (doOption == 3 && where_in_inventory(*x, w[option-1])<7){
+    if (doOption == 3 && item_in_inventory(*x, w[option-1], type)>=0){
+        int slot = item_in_inventory(*x, w[option-1], type);
         printf("You have sold "BLUE"%s"RESET" and retained half it's value of "YELLOW"%i\n"RESET, w[option-1].Name, w[option-1].money_cost/2);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold + w[option-1].money_cost/2);
         x->gold += w[option-1].money_cost/2;
-        x->Pweapon[where_in_inventory(*x, w[option-1])-1].id=0;
+        if (type==4){
+            x->Pdfense[slot].id=0;
+        }
+        else{
+            x->Pweapon[slot].id=0;
+        }
         getchar();
     }
-    else if (doOption == 1  && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, 1)<6 && item_in_inventory(*x, w[option-1])>=6){
+    else if (doOption == 1 && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, type) != -1 && item_in_inventory(*x, w[option-1], type) == -1){
+        int slot = FullInventoryChecker(*x, type);
         printf("You have purchased "BLUE"%s\n"RESET, w[option-1].Name);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold - w[option-1].money_cost);
         x->gold -= w[option-1].money_cost;
-        x->Pweapon[FullInventoryChecker(*x, 1)]=w[option-1];
+        if (type==4){
+            x->Pdfense[slot]=w[option-1];
+        }
+        else{
+            x->Pweapon[slot]=w[option-1];
+        }
         getchar();
 
     }
@@ -435,6 +450,11 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     else if (w[option-1].money_cost > x->gold){
         printf("You do not have enough gold to buy this item.\n");
+        getchar();
+        return 1;
+    }
+    else if (FullInventoryChecker(*x, type)==-1){
+        printf("Your inventory is full, sell a weapon if buyng a weapon, or a defence if buying a defence item to clear it up");
         getchar();
         return 1;
     }
@@ -492,7 +512,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
 int main(){
     int option = 0;
     // Define all weapons and players
-    struct Weapon melee[17] = {
+    struct Weapon melee[21] = {
     //   Name               Type            ID    Damage    CritChance      Cost
         {"Fists",           "Blunt",        1,    5,        5,              0,},
         {"Rusty Sword",     "Sharp",        2,    12,       8,              0,},
@@ -511,13 +531,11 @@ int main(){
         {"Chainsword",      "Sharp",       15,    45,      12,           2400,},
         {"Sledgehammer",    "Blunt",       16,    42,      18,           2800,},
         {"BoomBoom Gun",    "Explosive",   17,    60,       5,           3500,},
-    };
-    struct Weapon Defense[4] = {
-    //   Name                  Type            ID   damage   Cost  Reduction
-        {"Cardboard Shield",   "Light",       18,    0,       250,   10},
-        {"Wooden Shield",      "Medium",      19,    0,       500,   20},
-        {"Metal Shield",       "Heavy",       20,    0,       950,   30},
-        {"Kevlar Vest",        "Special",     21,    0,      1700,   45},
+    //   Name                  Type           ID      Cost          Reduction
+        {"Cardboard Shield",   "Light",       18,     .money_cost=   250,.damage_reduction=10},
+        {"Wooden Shield",      "Medium",      19,     .money_cost=   500,.damage_reduction=20},
+        {"Metal Shield",       "Heavy",       20,     .money_cost=   950,.damage_reduction=30},
+        {"Kevlar Vest",        "Special",     21,     .money_cost=  1700,.damage_reduction=45},
     };
 
     struct Player P[2] = {
@@ -527,11 +545,11 @@ int main(){
     int player_turn=0;
 
     //Gotta get dat dev logo
-    printf("\nPress enter to continue\n"RED BOLD);
-    print_ascii("ANDREW HELD HOSTAGE");
-    printf(RESET);
-    getchar();
-    Clear();
+    //printf("\nPress enter to continue\n"RED BOLD);
+    //print_ascii("ANDREW HELD HOSTAGE");
+    //printf(RESET);
+    //getchar();
+    //Clear();
 
     //printf("Player 1, enter your name:\n");
     //scanf("%s", P[0].name);
