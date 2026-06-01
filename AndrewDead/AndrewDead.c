@@ -284,7 +284,8 @@ struct Weapon{
     int damage_reduction;
     int cooldown;
     int coountdown;
-    int defense_durability;
+    float defense_durability;
+    int last_used;
 };
 
 struct Player{
@@ -382,19 +383,19 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     printf(CYAN"\nDefeeisive items"RESET);
     printf(BOLD"\n%-3s%-20s%-10s%-15s%-15s%s\n","", "Name", "Class", "Reduction %", "Durability", "Price"RESET);
-    for (int i=17; i<21; i++){
+    for (int i=17; i<27; i++){
         int notowened=1;
         if (item_in_inventory(*x, w[i], 4)>=0){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
-            printf("%-3i%-20s%-10s%-15i%-15i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-15i%-15f"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
         }
         else if (notowened==1 && w[i].money_cost>x->gold){
-            printf("%-3i%-20s%-10s%-15i%-15i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-15i%-15f"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-15i%-15i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, BLUE"OWNED"RESET);
+            printf("%-3i%-20s%-10s%-15i%-15f%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, BLUE"OWNED"RESET);
         }
     }
     printf("Enter 0 to leave the shop\n\n");
@@ -404,7 +405,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     if (option==0){
         return 1;
     }
-    else if (option>=18 && option <=21){
+    else if (option>=18 && option <=27){
         type = 4;
     }
     else if (option>=1 && option <=17){
@@ -476,17 +477,23 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     return 0;
 }
 
-int EquipItem(struct Player *P){
+int EquipItem(struct Player *P, int player_turn){
     int option=0;
     printf("Which item would you like to equip?\nEnter 0 to go back\n");
     for (int i=0; i<6; i++){
-        if (P->Pweapon[i].Name[0] != '\0'){
-            printf("%i. %s\n", i+1, P->Pweapon[i].Name);
+        if (P->Pweapon[i].Name[0] != '\0' && P->Pweapon[i].last_used==0){
+            printf(BLUE"%i. %s\n"RESET, i+1, P->Pweapon[i].Name);
+        }
+        else if (P->Pweapon[i].Name[0] != '\0' && P->Pweapon[i].last_used!=0){
+            printf(RED"%i. %s\n"RESET, i+1, P->Pweapon[i].Name);
         }
     }
     scanf("%i", &option);
     getchar();
     if (option<=0){return 2;}
+    else if (P->Pweapon[option-1].last_used!=0){printf("\nWeapon is in cooldown, you have "CYAN"%i"RESET" turns left");
+        getchar();
+        return 2;}
     printf("You have eqquped "BOLD"%s"RESET, P->Pweapon[option-1].Name);
     P->equipped_weapon = P->Pweapon[option-1];
     getchar();
@@ -531,44 +538,67 @@ int UseWeaponItem(struct Player *P, int player_turn){
             P[attacker].name, total_damage, P[defender].name,
             P[defender].name, P[defender].equipped_defense.damage_reduction);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
+        printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
         getchar();
+        P[attacker].equipped_weapon.last_used=player_turn;
+        P[attacker].equipped_weapon.id=0;
     }
     else{
         P[defender].health -= total_damage;
         printf(BLUE"%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n", P[attacker].name, total_damage, P[defender].name);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
+        printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
         getchar();
+        P[attacker].equipped_weapon.last_used=player_turn;
+        P[attacker].equipped_weapon.id=0;
     }
     return 1;
+}
+
+void weapon_checkek(struct Player *x, int player_turn){
+    if (x->equipped_weapon.cooldown+x->equipped_weapon.last_used==player_turn){
+        x->equipped_weapon.last_used=0;
+    }
+    for (int i=0; i<6; i++){
+        if (x->Pweapon[i].cooldown+x->Pweapon[i].last_used==player_turn){
+            x->Pweapon[i].last_used=0;
+        }
+    }
 }
 
 int main(){
     int option = 0;
     // Define all weapons and players
-    struct Weapon melee[21] = {
-    //   Name               Type            ID    Damage    CritChance      Cost
-        {"Fists",           "Blunt",        1,    5,        5,              0,      .cooldown = 0},
-        {"Rusty Sword",     "Sharp",        2,    12,       8,              0,      .cooldown = 0},
-        {"Kitchen Knife",   "Sharp",        7,    14,      22,            200,},
-        {"Wooden Club",     "Blunt",        8,    16,      15,            280,},
-        {"Metal Hatchet",   "Sharp",        3,    18,      12,            320,},
-        {"Baseball Bat",    "Blunt",        9,    20,      18,            400,},
-        {"Trick Knife",     "Sharp",       10,    15,      28,            480,},
-        {"Person Beater",   "Blunt",        4,    22,      20,            520,},
-        {"Murder Of Crowbars","Blunt",     11,    24,      15,            580,},
-        {"Pipe Bomb",       "Explosive",    5,    35,       5,            750,},
-        {"Crossedbow",      "Ranged",      12,    36,      22,            950,},
-        {"Leviathan Axe",   "Sharp",       13,    32,      18,           1050,},
-        {"Rubber Ducky",    "Blunt",        6,    50,      25,           1600,},
-        {"Katana",          "Sharp",       14,    36,      35,           1800,},
-        {"Chainsword",      "Sharp",       15,    45,      12,           2400,},
-        {"Sledgehammer",    "Blunt",       16,    42,      18,           2800,},
-        {"BoomBoom Gun",    "Explosive",   17,    60,       5,           3500,},
-    //   Name                  Type           ID      Cost                  Reduction            Durability
-        {"Cardboard Shield",   "Light",       18,     .money_cost=   250,.damage_reduction=10, .defense_durability = 50},
-        {"Wooden Shield",      "Medium",      19,     .money_cost=   500,.damage_reduction=20, .defense_durability = 60},
-        {"Metal Shield",       "Heavy",       20,     .money_cost=   950,.damage_reduction=30, .defense_durability = 100},
-        {"Kevlar Vest",        "Special",     21,     .money_cost=  1700,.damage_reduction=45, .defense_durability = 200},
+    struct Weapon melee[27] = {
+    //   Name                  Type            ID    Damage    CritChance      Cost
+        {"Fists",              "Blunt",        1,    5,        5,              0,      .cooldown = 0},
+        {"Rusty Sword",        "Sharp",        2,    12,       8,              0,      .cooldown = 0},
+        {"Kitchen Knife",      "Sharp",        3,    14,      22,            200,      .cooldown = 5},
+        {"Wooden Club",        "Blunt",        4,    16,      15,            280,      .cooldown = 5},
+        {"Metal Hatchet",      "Sharp",        5,    18,      12,            320,},
+        {"Baseball Bat",       "Blunt",        6,    20,      18,            400,},
+        {"Trick Knife",        "Sharp",        7,    15,      28,            480,      .cooldown = 8},
+        {"Person Beater",      "Blunt",        8,    22,      20,            520,},
+        {"Murder Of Crowbars", "Blunt",        9,    24,      15,            580,},
+        {"Pipe Bomb",          "Explosive",   10,    35,       5,            750,},
+        {"Crossedbow",         "Ranged",      11,    28,      22,            950,},
+        {"Leviathan Axe",      "Sharp",       12,    32,      18,           1250,},
+        {"Rubber Ducky",       "Blunt",       13,    50,      25,           1500,},
+        {"Katana",             "Sharp",       14,    36,      35,           1800,},
+        {"Chainsword",         "Sharp",       15,    45,      12,           2400,},
+        {"Sledgehammer",       "Blunt",       16,    42,      18,           2800,},
+        {"BoomBoom Gun",       "Explosive",   17,    60,       5,           3500,},
+    //   Name                  Type           ID       Cost                  Reduction              Durability
+        {"Cardboard Shield",   "Light",       18,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
+        {"Wooden Shield",      "Medium",      19,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
+        {"Metal Shield",       "Heavy",       20,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
+        {"Kevlar Vest",        "Special",     21,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
+        {"Cardboard Shield",   "Light",       22,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
+        {"Wooden Shield",      "Medium",      23,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
+        {"Metal Shield",       "Heavy",       24,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
+        {"Kevlar Vest",        "Special",     25,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
+        {"Cardboard Shield",   "Light",       26,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
+        {"Wooden Shield",      "Medium",      27,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
     };
 
     struct Player P[2] = {
@@ -603,7 +633,7 @@ int main(){
                     printf("Enter 1 to equip your weapon and 2 for your defence\n");
                     scanf("%i", &word);
                 }
-                if (word==1){EquipItem(&P[player_turn%2]);}
+                if (word==1){EquipItem(&P[player_turn%2], player_turn);}
                 else{Equipdefense(&P[player_turn%2]);}
                 player_turn--;
                 break;
@@ -623,7 +653,10 @@ int main(){
         if (P[player_turn%2].gold*0.05>=100){P[player_turn%2].gold*=1.05;}
         player_turn++;
         if (SignsOfLife(P[player_turn%2])==0){
-            printf(RED"%s is DEAD"GREEN"\n%s WINS!!!!!!!!", P[player_turn%2].name, P[(player_turn-1)%2].name);
+            printf(RED"%s is \n\n", P[player_turn%2].name);
+            print_ascii("D E A D");
+            printf(GREEN"\n%s is the\n\n", P[(player_turn+1)%2].name);
+            print_ascii("W I N N E R");
             getchar();
             break;
         }
