@@ -365,20 +365,20 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
     printf(CYAN"\n\nOffensive items"RESET);
-    printf(BOLD"\n%-3s%-20s%-10s%-10s%-10s%s\n"RESET,"", "Name", "Type", "Damage", "Crit %", "Price");
+    printf(BOLD"\n%-3s%-20s%-10s%-10s%-10s%-10s%s\n"RESET,"", "Name", "Type", "Damage", "Crit %", "Cooldown", "Price");
     for (int i=0; i<17; i++){
         int notowened=1;
         if (item_in_inventory(*x, w[i], 6)>=0){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
-            printf("%-3i%-20s%-10s%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, w[i].money_cost);
         }
         else if (notowened==1 && w[i].money_cost>x->gold){
-            printf("%-3i%-20s%-10s%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, BLUE"OWNED"RESET);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, BLUE"OWNED"RESET);
         }
     }
     printf(CYAN"\nDefeeisive items"RESET);
@@ -416,7 +416,6 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         getchar();
         return 1;
     }
-    printf(RED"\n%i\n"RESET, item_in_inventory(*x, w[option-1], type));
     printf("What would you like to do with "BLUE"%s?\n"RESET, w[option-1].Name);
     printf("Pick an option below \n%-30s%s\n", "1. Buy", "2. Go back");
     if (item_in_inventory(*x, w[option-1], type)>=0){
@@ -465,7 +464,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         return 1;
     }
     else if (w[option-1].money_cost > x->gold){
-        printf("You do not have enough gold to buy this item.\n");
+        printf("You are too poor to buy this item.\n");
         getchar();
         return 1;
     }
@@ -491,7 +490,7 @@ int EquipItem(struct Player *P, int player_turn){
     scanf("%i", &option);
     getchar();
     if (option<=0){return 2;}
-    else if (P->Pweapon[option-1].last_used!=0){printf("\nWeapon is in cooldown, you have "CYAN"%i"RESET" turns left");
+    else if (P->Pweapon[option-1].last_used!=0){printf("\nWeapon is in cooldown, you have "CYAN"%i"RESET" turns left", ((P->Pweapon[option-1].last_used+P->Pweapon[option-1].cooldown)-player_turn)/2+1);
         getchar();
         return 2;}
     printf("You have eqquped "BOLD"%s"RESET, P->Pweapon[option-1].Name);
@@ -538,19 +537,35 @@ int UseWeaponItem(struct Player *P, int player_turn){
             P[attacker].name, total_damage, P[defender].name,
             P[defender].name, P[defender].equipped_defense.damage_reduction);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
-        printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
-        getchar();
-        P[attacker].equipped_weapon.last_used=player_turn;
-        P[attacker].equipped_weapon.id=0;
+        if (P[attacker].equipped_weapon.cooldown!=0){
+            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
+            getchar();
+            P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
+            for (int i=0; i<6; i++){
+                if (P[attacker].equipped_weapon.id==P[attacker].Pweapon[i].id){
+                    P[attacker].Pweapon[i].id=0;
+                    P[attacker].Pweapon[i].last_used=player_turn+P[attacker].Pweapon[i].cooldown;
+                }
+            }
+            P[attacker].equipped_weapon.id=0;}
+        else{getchar();}
     }
     else{
         P[defender].health -= total_damage;
         printf(BLUE"%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n", P[attacker].name, total_damage, P[defender].name);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
-        printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
-        getchar();
-        P[attacker].equipped_weapon.last_used=player_turn;
-        P[attacker].equipped_weapon.id=0;
+        if (P[attacker].equipped_weapon.cooldown!=0){
+            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
+            getchar();
+            P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
+            for (int i=0; i<6; i++){
+                if (P[attacker].equipped_weapon.id==P[attacker].Pweapon[i].id){
+                    P[attacker].Pweapon[i].id=0;
+                    P[attacker].Pweapon[i].last_used=player_turn+P[attacker].Pweapon[i].cooldown;
+                }
+            }
+            P[attacker].equipped_weapon.id=0;}
+        else{getchar();}
     }
     return 1;
 }
@@ -570,25 +585,25 @@ int main(){
     int option = 0;
     // Define all weapons and players
     struct Weapon melee[27] = {
-    //   Name                  Type            ID    Damage    CritChance      Cost
-        {"Fists",              "Blunt",        1,    5,        5,              0,      .cooldown = 0},
-        {"Rusty Sword",        "Sharp",        2,    12,       8,              0,      .cooldown = 0},
-        {"Kitchen Knife",      "Sharp",        3,    14,      22,            200,      .cooldown = 5},
-        {"Wooden Club",        "Blunt",        4,    16,      15,            280,      .cooldown = 5},
-        {"Metal Hatchet",      "Sharp",        5,    18,      12,            320,},
-        {"Baseball Bat",       "Blunt",        6,    20,      18,            400,},
-        {"Trick Knife",        "Sharp",        7,    15,      28,            480,      .cooldown = 8},
-        {"Person Beater",      "Blunt",        8,    22,      20,            520,},
-        {"Murder Of Crowbars", "Blunt",        9,    24,      15,            580,},
-        {"Pipe Bomb",          "Explosive",   10,    35,       5,            750,},
-        {"Crossedbow",         "Ranged",      11,    28,      22,            950,},
-        {"Leviathan Axe",      "Sharp",       12,    32,      18,           1250,},
-        {"Rubber Ducky",       "Blunt",       13,    50,      25,           1500,},
-        {"Katana",             "Sharp",       14,    36,      35,           1800,},
-        {"Chainsword",         "Sharp",       15,    45,      12,           2400,},
-        {"Sledgehammer",       "Blunt",       16,    42,      18,           2800,},
-        {"BoomBoom Gun",       "Explosive",   17,    60,       5,           3500,},
-    //   Name                  Type           ID       Cost                  Reduction              Durability
+    //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown
+        {"Fists",              "Blunt",        1,     5,        5,              0,   .cooldown = 0},
+        {"Rusty Sword",        "Sharp",        2,    10,        8,              0,   .cooldown = 0},
+        {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 0},
+        {"Wooden Club",        "Blunt",        4,    14,       15,            280,   .cooldown = 0},
+        {"Metal Hatchet",      "Sharp",        5,    16,       10,            320,   .cooldown = 0},
+        {"Baseball Bat",       "Blunt",        6,    18,       15,            400,   .cooldown = 0},
+        {"Trick Knife",        "Sharp",        7,    22,       28,            520,   .cooldown = 2},
+        {"Person Beater",      "Blunt",        8,    26,       18,            580,   .cooldown = 2},
+        {"Murder Of Crowbars", "Blunt",        9,    30,       12,            640,   .cooldown = 2},
+        {"Pipe Bomb",          "Explosive",   10,    44,        5,            800,   .cooldown = 4},
+        {"Crossedbow",         "Ranged",      11,    34,       22,           1000,   .cooldown = 2},
+        {"Leviathan Axe",      "Sharp",       12,    48,       18,           1350,   .cooldown = 4},
+        {"Rubber Ducky",       "Blunt",       13,    80,       25,           1600,   .cooldown = 4},
+        {"Katana",             "Sharp",       14,    52,       35,           1900,   .cooldown = 3},
+        {"Chainsword",         "Sharp",       15,    60,       12,           2500,   .cooldown = 4},
+        {"Sledgehammer",       "Blunt",       16,    65,       18,           3000,   .cooldown = 4},
+        {"BoomBoom Gun",       "Explosive",   17,    90,        5,           3500,   .cooldown = 5},
+    //   Name                  Type           ID                   Cost                Reduction                Durability
         {"Cardboard Shield",   "Light",       18,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
         {"Wooden Shield",      "Medium",      19,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
         {"Metal Shield",       "Heavy",       20,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
@@ -602,8 +617,8 @@ int main(){
     };
 
     struct Player P[2] = {
-        {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
-        {.name = "TURG", .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "Jim Pickens", .health = 100, .gold = 5000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "TURG", .health = 100, .gold = 5500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
@@ -621,6 +636,7 @@ int main(){
 
     while(1){
         Clear();
+        weapon_checkek(&P[player_turn%2],player_turn);
         option = MainPmenu(P[player_turn%2]);
         switch (option){
             case 1:
@@ -660,7 +676,4 @@ int main(){
             getchar();
             break;
         }
-    }
-
-    return 0;
-}
+    }return 0;}///666
