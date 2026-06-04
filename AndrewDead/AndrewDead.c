@@ -329,14 +329,13 @@ void Rest(struct Player *x){
 }
 
 int FullInventoryChecker(struct Player x, int type){
-    int limit = (type == 4) ? 4 : 6;
-    for (int i = 0; i < limit; i++){
+    for (int i = 0; i < type; i++){
         if (type == 4){
             if (x.Pdfense[i].id == 0){
                 return i;
             }
         } else {
-            if (x.Pweapon[i].id == 0){
+            if (x.Pweapon[i].damage<5 ||x.Pweapon[i].damage>90){
                 return i;
             }
         }
@@ -345,14 +344,13 @@ int FullInventoryChecker(struct Player x, int type){
 }
 
 int item_in_inventory(struct Player x, struct Weapon w, int type){
-    int limit = (type == 4) ? 4 : 6;
-    for (int i = 0; i < limit; i++){
+    for (int i = 0; i < type; i++){
         if (type == 4){
-            if (w.id == x.Pdfense[i].id){
+            if (strcmp(x.Pdfense[i].Name, w.Name)==0){
                 return i;
             }
         } else {
-            if (w.id == x.Pweapon[i].id){
+            if (strcmp(x.Pweapon[i].Name, w.Name)==0){
                 return i;
             }
         }
@@ -431,10 +429,10 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold + w[option-1].money_cost/2);
         x->gold += w[option-1].money_cost/2;
         if (type==4){
-            x->Pdfense[slot].id=0;
+            memset(&x->Pdfense[slot], 0, sizeof(struct Weapon));
         }
         else{
-            x->Pweapon[slot].id=0;
+            memset(&x->Pweapon[slot], 0, sizeof(struct Weapon));
         }
         if (x->equipped_defense.id==w[option-1].id){
             printf(BLUE"%s"RESET" has been removed from your inventory", x->equipped_defense.Name);
@@ -465,7 +463,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     else if (w[option-1].money_cost > x->gold){
         printf("You are too poor to buy this item.\n");
-        getchar();
+        getchar();getchar();
         return 1;
     }
     else if (FullInventoryChecker(*x, type)==-1){
@@ -490,7 +488,7 @@ int EquipItem(struct Player *P, int player_turn){
     scanf("%i", &option);
     getchar();
     if (option<=0){return 2;}
-    else if (P->Pweapon[option-1].last_used!=0){printf("\nWeapon is in cooldown, you have "CYAN"%i"RESET" turns left", ((P->Pweapon[option-1].last_used+P->Pweapon[option-1].cooldown)-player_turn)/2+1);
+    else if (P->Pweapon[option-1].last_used!=0){printf("\nWeapon is in cooldown, you have "CYAN"%i"RESET" turns left", ((P->Pweapon[option-1].last_used+P->Pweapon[option-1].cooldown)-player_turn)/2);
         getchar();
         return 2;}
     printf("You have eqquped "BOLD"%s"RESET, P->Pweapon[option-1].Name);
@@ -500,6 +498,11 @@ int EquipItem(struct Player *P, int player_turn){
 }
 
 int Equipdefense(struct Player *P){
+    if(FullInventoryChecker(*P, 4)==0){
+        printf("You have no defences");
+        getchar();
+        return 2;
+    }
     int option=0;
     printf("Which item would you like to equip?\nEnter 0 to go back\n");
     for (int i=0; i<4; i++){
@@ -570,13 +573,23 @@ int UseWeaponItem(struct Player *P, int player_turn){
     return 1;
 }
 
-void weapon_checkek(struct Player *x, int player_turn){
+void weapon_checkek(struct Player *x, int player_turn, struct Weapon master[]){
     if (x->equipped_weapon.cooldown+x->equipped_weapon.last_used==player_turn){
         x->equipped_weapon.last_used=0;
+        for (int j=0; j<17; j++){
+            if (strcmp(x->equipped_weapon.Name, master[j].Name)==0){
+                x->equipped_weapon.id = master[j].id;
+            }
+        }
     }
     for (int i=0; i<6; i++){
         if (x->Pweapon[i].cooldown+x->Pweapon[i].last_used==player_turn){
             x->Pweapon[i].last_used=0;
+            for (int j=0; j<17; j++){
+                if (strcmp(x->Pweapon[i].Name, master[j].Name)==0){
+                    x->Pweapon[i].id = master[j].id;
+                }
+            }
         }
     }
 }
@@ -617,8 +630,8 @@ int main(){
     };
 
     struct Player P[2] = {
-        {.name = "Jim Pickens", .health = 100, .gold = 5000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
-        {.name = "TURG", .health = 100, .gold = 5500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "Jim Pickens", .health = 100, .gold = 50000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "TURG", .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
@@ -636,7 +649,7 @@ int main(){
 
     while(1){
         Clear();
-        weapon_checkek(&P[player_turn%2],player_turn);
+        weapon_checkek(&P[player_turn%2],player_turn, melee);
         option = MainPmenu(P[player_turn%2]);
         switch (option){
             case 1:
@@ -648,6 +661,7 @@ int main(){
                 while(word<1||word>2){
                     printf("Enter 1 to equip your weapon and 2 for your defence\n");
                     scanf("%i", &word);
+                    getchar();
                 }
                 if (word==1){EquipItem(&P[player_turn%2], player_turn);}
                 else{Equipdefense(&P[player_turn%2]);}
