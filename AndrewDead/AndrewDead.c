@@ -370,13 +370,13 @@ int Capitalism(struct Player *x, struct Weapon w[]){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
-            printf("%-3i%-20s%-10s%-10i%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].money_cost);
         }
         else if (notowened==1 && w[i].money_cost>x->gold){
-            printf("%-3i%-20s%-10s%-10i%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, w[i].money_cost);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-10i%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown, BLUE"OWNED"RESET);
+            printf("%-3i%-20s%-10s%-10i%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, BLUE"OWNED"RESET);
         }
     }
     printf(CYAN"\nDefeeisive items"RESET);
@@ -540,8 +540,8 @@ int UseWeaponItem(struct Player *P, int player_turn){
             P[attacker].name, total_damage, P[defender].name,
             P[defender].name, P[defender].equipped_defense.damage_reduction);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
-        if (P[attacker].equipped_weapon.cooldown!=0){
-            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
+        if (P[attacker].equipped_weapon.cooldown!=1){
+            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
             getchar();
             P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
             for (int i=0; i<6; i++){
@@ -557,8 +557,8 @@ int UseWeaponItem(struct Player *P, int player_turn){
         P[defender].health -= total_damage;
         printf(BLUE"%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n", P[attacker].name, total_damage, P[defender].name);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
-        if (P[attacker].equipped_weapon.cooldown!=0){
-            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown);
+        if (P[attacker].equipped_weapon.cooldown!=1){
+            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
             getchar();
             P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
             for (int i=0; i<6; i++){
@@ -599,12 +599,12 @@ int main(){
     // Define all weapons and players
     struct Weapon melee[27] = {
     //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown
-        {"Fists",              "Blunt",        1,     5,        5,              0,   .cooldown = 0},
-        {"Rusty Sword",        "Sharp",        2,    10,        8,              0,   .cooldown = 0},
-        {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 0},
-        {"Wooden Club",        "Blunt",        4,    14,       15,            280,   .cooldown = 0},
-        {"Metal Hatchet",      "Sharp",        5,    16,       10,            320,   .cooldown = 0},
-        {"Baseball Bat",       "Blunt",        6,    18,       15,            400,   .cooldown = 0},
+        {"Fists",              "Blunt",        1,     5,        5,              0,   .cooldown = 1},
+        {"Rusty Sword",        "Sharp",        2,    10,        8,              0,   .cooldown = 1},
+        {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 1},
+        {"Wooden Club",        "Blunt",        4,    14,       15,            280,   .cooldown = 1},
+        {"Metal Hatchet",      "Sharp",        5,    16,       10,            320,   .cooldown = 1},
+        {"Baseball Bat",       "Blunt",        6,    18,       15,            400,   .cooldown = 1},
         {"Trick Knife",        "Sharp",        7,    22,       28,            520,   .cooldown = 2},
         {"Person Beater",      "Blunt",        8,    26,       18,            580,   .cooldown = 2},
         {"Murder Of Crowbars", "Blunt",        9,    30,       12,            640,   .cooldown = 2},
@@ -630,22 +630,22 @@ int main(){
     };
 
     struct Player P[2] = {
-        {.name = "Jim Pickens", .health = 100, .gold = 50000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
         {.name = "TURG", .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
     //Gotta get dat dev logo
-    //printf("\nPress enter to continue\n"RED BOLD);
-    //print_ascii("ANDREW HELD HOSTAGE");
-    //printf(RESET);
-    //getchar();
-    //Clear();
+    printf("\nPress enter to continue\n"RED BOLD);
+    print_ascii("ANDREW HELD HOSTAGE");
+    printf(RESET);
+    getchar();
+    Clear();
 
-    //printf("Player 1, enter your name:\n");
-    //scanf("%s", P[0].name);
-    //printf("\nPlayer 2, enter your name:\n");
-    //scanf("%s", P[1].name);
+    printf("Player 1, enter your name:\n");
+    scanf("%s", P[0].name);
+    printf("\nPlayer 2, enter your name:\n");
+    scanf("%s", P[1].name);
 
     while(1){
         Clear();
@@ -690,4 +690,4 @@ int main(){
             getchar();
             break;
         }
-    }return 0;}///666
+    }return 0;}///actual is number - 254 for ANDREW HELD HOSTAGE
