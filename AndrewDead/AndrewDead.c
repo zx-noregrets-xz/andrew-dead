@@ -300,7 +300,7 @@ struct Player{
 };
 
 int SignsOfLife(struct Player x){
-    if (x.health>=0){return 1;}
+    if (x.health>0){return 1;}
     else{return 0;}
 }
 
@@ -380,20 +380,20 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         }
     }
     printf(CYAN"\nDefeeisive items"RESET);
-    printf(BOLD"\n%-3s%-20s%-10s%-15s%-15s%s\n","", "Name", "Class", "Reduction %", "Durability", "Price"RESET);
+    printf(BOLD"\n%-3s%-20s%-20s%-15s%-15s%s\n","", "Name", "Class", "Reduction %", "Durability", "Price"RESET);
     for (int i=17; i<27; i++){
         int notowened=1;
         if (item_in_inventory(*x, w[i], 4)>=0){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
-            printf("%-3i%-20s%-10s%-15i%-15f"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
+            printf("%-3i%-20s%-20s%-15i%-15g"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
         }
         else if (notowened==1 && w[i].money_cost>x->gold){
-            printf("%-3i%-20s%-10s%-15i%-15f"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
+            printf("%-3i%-20s%-20s%-15i%-15g"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, w[i].money_cost);
         }
         else{
-            printf("%-3i%-20s%-10s%-15i%-15f%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, BLUE"OWNED"RESET);
+            printf("%-3i%-20s%-20s%-15i%-15g%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, w[i].defense_durability, BLUE"OWNED"RESET);
         }
     }
     printf("Enter 0 to leave the shop\n\n");
@@ -533,13 +533,31 @@ int UseWeaponItem(struct Player *P, int player_turn){
         printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.\n", P[attacker].name);
     }
     if (P[defender].equipped_defense.id != 0){
+        // Calculate the
         float reduction = P[defender].equipped_defense.damage_reduction / 100.0;
         total_damage -= total_damage * reduction;
-        P[defender].health -= total_damage;
-        printf(BLUE"%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n"BLUE"%s"RESET" blocked "BLUE"%i percent"RESET"\n",
+        if (P[defender].equipped_defense.defense_durability-total_damage/2<=0){         //Sees if you defense has broken and transfers that damage to you
+            printf(BLUE"\n%s"RESET" has broken and been removed from your inventory", P[defender].equipped_defense.Name);
+            printf(RED"\n%g"RESET" damage transfers to you\n", P[defender].equipped_defense.defense_durability-total_damage/2);
+            total_damage+=(0-(P[defender].equipped_defense.defense_durability-total_damage/2));
+            memset(&P[defender].equipped_defense, 0, sizeof(struct Weapon));
+            for (int i=0; i<4; i++){
+                if (P[defender].equipped_defense.id==P[defender].Pdfense[i].id){
+                    memset(&P[defender].Pdfense[i], 0, sizeof(struct Weapon));
+                }
+            }
+        }
+        else{P[defender].equipped_defense.defense_durability-=total_damage/2;
+            printf(BLUE"%s's "RESET"defensive item's durability is "RED"reduced\n"RESET" by half the total damage of "CYAN"%g"RESET" and is now at "CYAN"%g\n"RESET, P[defender].name, total_damage/2, P[defender].equipped_defense.defense_durability);}
+
+
+        printf(BLUE"\n%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n"BLUE"%s"RESET" blocked "BLUE"%i percent"RESET"\n\n",
             P[attacker].name, total_damage, P[defender].name,
             P[defender].name, P[defender].equipped_defense.damage_reduction);
-        printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health + total_damage, P[defender].health);
+        printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health, P[defender].health-total_damage);
+
+
+        P[defender].health -= total_damage;
         if (P[attacker].equipped_weapon.cooldown!=1){
             printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
             getchar();
@@ -602,7 +620,7 @@ int main(){
         {"Fists",              "Blunt",        1,     5,        5,              0,   .cooldown = 1},
         {"Rusty Sword",        "Sharp",        2,    10,        8,              0,   .cooldown = 1},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 1},
-        {"Wooden Club",        "Blunt",        4,    14,       15,            280,   .cooldown = 1},
+        {"Stink Bomb",         "Explosive",    4,    25,        1,            280,   .cooldown = 1},
         {"Metal Hatchet",      "Sharp",        5,    16,       10,            320,   .cooldown = 1},
         {"Baseball Bat",       "Blunt",        6,    18,       15,            400,   .cooldown = 1},
         {"Trick Knife",        "Sharp",        7,    22,       28,            520,   .cooldown = 2},
@@ -616,22 +634,22 @@ int main(){
         {"Chainsword",         "Sharp",       15,    60,       12,           2500,   .cooldown = 4},
         {"Sledgehammer",       "Blunt",       16,    65,       18,           3000,   .cooldown = 4},
         {"BoomBoom Gun",       "Explosive",   17,    90,        5,           3500,   .cooldown = 5},
-    //   Name                  Type           ID                   Cost                Reduction                Durability
-        {"Cardboard Shield",   "Light",       18,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
-        {"Wooden Shield",      "Medium",      19,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
-        {"Metal Shield",       "Heavy",       20,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
-        {"Kevlar Vest",        "Special",     21,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
-        {"Cardboard Shield",   "Light",       22,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
-        {"Wooden Shield",      "Medium",      23,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
-        {"Metal Shield",       "Heavy",       24,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
-        {"Kevlar Vest",        "Special",     25,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
-        {"Cardboard Shield",   "Light",       26,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
-        {"Wooden Shield",      "Medium",      27,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
+    //   Name                  Type                    ID                   Cost                Reduction                Durability
+        {"Cardboard Shield",   "Light-Chainmail",      18,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 10},
+        {"Wooden Shield",      "Light-Kevlar",         19,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 20},
+        {"Metal Shield",       "Light-",               20,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 20},
+        {"Kevlar Vest",        "Special",              21,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
+        {"Cardboard Shield",   "Light",                22,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
+        {"Wooden Shield",      "Medium",               23,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
+        {"Metal Shield",       "Heavy",                24,     .money_cost=   950,   .damage_reduction=30, .defense_durability = 100},
+        {"Kevlar Vest",        "Special",              25,     .money_cost=  1700,   .damage_reduction=45, .defense_durability = 200},
+        {"Cardboard Shield",   "Light",                26,     .money_cost=   250,   .damage_reduction=10, .defense_durability = 50},
+        {"Wooden Shield",      "Medium",               27,     .money_cost=   500,   .damage_reduction=20, .defense_durability = 60},
     };
 
     struct Player P[2] = {
         {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
-        {.name = "TURG", .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "TURG",        .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
 
