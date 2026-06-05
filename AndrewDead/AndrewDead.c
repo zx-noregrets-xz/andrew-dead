@@ -636,16 +636,16 @@ int main(){
     int player_turn=0;
 
     //Gotta get dat dev logo
-    printf("\nPress enter to continue\n"RED BOLD);
-    print_ascii("ANDREW HELD HOSTAGE");
-    printf(RESET);
-    getchar();
-    Clear();
+    //printf("\nPress enter to continue\n"RED BOLD);
+    //print_ascii("ANDREW HELD HOSTAGE");
+    //printf(RESET);
+    //getchar();
+    //Clear();
 
-    printf("Player 1, enter your name:\n");
-    scanf("%s", P[0].name);
-    printf("\nPlayer 2, enter your name:\n");
-    scanf("%s", P[1].name);
+    //printf("Player 1, enter your name:\n");
+    //scanf("%s", P[0].name);
+    //printf("\nPlayer 2, enter your name:\n");
+    //scanf("%s", P[1].name);
 
     while(1){
         Clear();
