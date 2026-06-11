@@ -532,8 +532,8 @@ int UseWeaponItem(struct Player *P, int player_turn){
         return 2;
     }
     if (P[attacker].equipped_weapon.crit_chance > rb(0,100)){
-        total_damage *= 2;
-        printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.\n", P[attacker].name);
+        total_damage *= 1.5;
+        printf(CYAN"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
     }
     if (P[defender].equipped_defense.id != 0){
         // Calculate the
