@@ -322,7 +322,7 @@ void Rest(struct Player *x){
     Clear();
     x->gold += 100 + 50 * (x->times_rested);
     x->health += 9;
-    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 15 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n", 100 + 50 * (x->times_rested), x->gold, x->health);
+    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 9 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n", 100 + 50 * (x->times_rested), x->gold, x->health);
     getchar();
     x->times_rested++;
     if (x->times_rested>3){
@@ -544,7 +544,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
         }
         else{
             reduction = P[defender].equipped_defense.damage_reduction / 200.0;
-            printf(CYAN"%s's"RESET" defense of a non-matching class blocked "RED"%g"RESET" out of "RED"%g"RESET"damage\n", P[defender].name, total_damage*reduction, total_damage);
+            printf(CYAN"%s's"RESET" defense of a non-matching class blocked "RED"%g"RESET" out of "RED"%g"RESET" damage\n", P[defender].name, total_damage*reduction, total_damage);
         }
         total_damage -= total_damage * reduction;
         /*if (P[defender].equipped_defense.defense_durability-total_damage/2<=0){         //Sees if you defense has broken and transfers that damage to you
@@ -627,30 +627,30 @@ int main(){
     // Define all weapons and players
     struct Weapon melee[27] = {
     //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown           weekness
-        {"Fists",              "Blunt",        1,     5,        5,              0,   .cooldown = 1, .class_res = 2},
-        {"Rusty Sword",        "Sharp",        2,    10,        8,              0,   .cooldown = 1, .class_res = 1},
+        {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2},
+        {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1},
         {"Stink Bomb",         "Explosive",    4,    25,        1,            680,   .cooldown = 2, .class_res = 3},
-        {"Metal Hatchet",      "Sharp",        5,    14,       30,            420,   .cooldown = 2, .class_res = 1},
-        {"Baseball Bat",       "Blunt",        6,    15,       15,            400,   .cooldown = 2, .class_res = 2},
-        {"Trick Knife",        "Sharp",        7,    17,       32,            551,   .cooldown = 2, .class_res = 1},
-        {"Person Beater",      "Blunt",        8,    22,       18,            600,   .cooldown = 2, .class_res = 2},
-        {"Murder Of Crowbars", "Blunt",        9,    28,       12,            640,   .cooldown = 2, .class_res = 2},
-        {"Pipe Bomb",          "Explosive",   10,    36,        5,            800,   .cooldown = 4, .class_res = 3},
-        {"Crossedbow",         "Sharp",       11,    34,       22,           1000,   .cooldown = 2, .class_res = 1},
-        {"Leviathan Axe",      "Sharp",       12,    48,       18,           1350,   .cooldown = 4, .class_res = 1},
-        {"Rubber Ducky",       "Blunt",       13,    80,       25,           1600,   .cooldown = 4, .class_res = 2},
-        {"Katana",             "Sharp",       14,    52,       35,           1900,   .cooldown = 3, .class_res = 1},
-        {"Chainsword",         "Sharp",       15,    60,       12,           2500,   .cooldown = 4, .class_res = 1},
-        {"Sledgehammer",       "Blunt",       16,    65,       18,           3000,   .cooldown = 4, .class_res = 2},
-        {"BoomBoom Gun",       "Explosive",   17,    90,        5,           3500,   .cooldown = 5, .class_res = 3},
+        {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1},
+        {"Baseball Bat",       "Blunt",        6,    15,       25,            400,   .cooldown = 2, .class_res = 2},
+        {"Trick Knife",        "Sharp",        7,    17,       42,            551,   .cooldown = 2, .class_res = 1},
+        {"Person Beater",      "Blunt",        8,    22,       28,            600,   .cooldown = 2, .class_res = 2},
+        {"Murder Of Crowbars", "Blunt",        9,    28,       22,            640,   .cooldown = 2, .class_res = 2},
+        {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 4, .class_res = 3},
+        {"Crossedbow",         "Sharp",       11,    34,       32,           1000,   .cooldown = 2, .class_res = 1},
+        {"Leviathan Axe",      "Sharp",       12,    48,       28,           1350,   .cooldown = 4, .class_res = 1},
+        {"Rubber Ducky",       "Explosive",   13,    80,        3,           1799,   .cooldown = 7, .class_res = 3},
+        {"Katana",             "Sharp",       14,    52,       45,           2200,   .cooldown = 3, .class_res = 1},
+        {"Chainsword",         "Sharp",       15,    60,       22,           2500,   .cooldown = 4, .class_res = 1},
+        {"Sledgehammer",       "Blunt",       16,    65,       28,           3000,   .cooldown = 4, .class_res = 2},
+        {"BoomBoom Gun",       "Explosive",   17,    90,        5,           3500,   .cooldown = 4, .class_res = 3},
     //   Name                 Type                    ID                   Cost                Reduction                Durability
-        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   250,   .damage_reduction=10, .class_res = 1},
-        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   260,   .damage_reduction=10, .class_res = 2},
-        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   232,   .damage_reduction=10, .class_res = 3},
-        {"knif-hat",          "Mid-Chainmail",        21,     .money_cost=   543,   .damage_reduction=25, .class_res = 1},
-        {"hurty hat",         "Mid-Kevlar",           22,     .money_cost=   561,   .damage_reduction=20, .class_res = 2},
-        {"kablosh hat",       "Mid-Bombsuit",         23,     .money_cost=   539,   .damage_reduction=20, .class_res = 3},
+        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   250,   .damage_reduction=18, .class_res = 1},
+        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   260,   .damage_reduction=18, .class_res = 2},
+        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   232,   .damage_reduction=22, .class_res = 3},
+        {"knif-hat",          "Mid-Chainmail",        21,     .money_cost=   543,   .damage_reduction=32, .class_res = 1},
+        {"hurty hat",         "Mid-Kevlar",           22,     .money_cost=   561,   .damage_reduction=30, .class_res = 2},
+        {"kablosh hat",       "Mid-Bombsuit",         23,     .money_cost=   539,   .damage_reduction=38, .class_res = 3},
         {"nif armer",         "Strong-Chainmail",     24,     .money_cost=   999,   .damage_reduction=40, .class_res = 1},
         {"owie armor",        "Strong-Kevlar",        25,     .money_cost=  1350,   .damage_reduction=45, .class_res = 2},
         {"boom armoer",       "Strong-Bombgsuit",     26,     .money_cost=  1240,   .damage_reduction=40, .class_res = 3},
@@ -689,7 +689,7 @@ int main(){
                 Clear();
                 int word = -1;
                 while(word<0||word>2){
-                    printf("Enter 1 to equip your weapon, 2 for your defence, and 0 to go back\n");
+                    printf("Enter 1 to equip your "RED"weapon"RESET", 2 for your "BLUE"defence"RESET", and 0 to go back\n");
                     scanf("%i", &word);
                     getchar();
                 }
@@ -710,7 +710,7 @@ int main(){
                 getchar();
                 break;
         }
-        P[player_turn%2].gold*=1.05;
+        P[player_turn%2].gold*=1.1;
         player_turn++;
         if (SignsOfLife(P[player_turn%2])==0){
             printf(RED"%s is \n\n", P[player_turn%2].name);
