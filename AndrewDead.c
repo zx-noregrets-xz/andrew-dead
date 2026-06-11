@@ -510,7 +510,7 @@ int Equipdefense(struct Player *P){
     printf("Which item would you like to equip?\nEnter 0 to go back\n");
     for (int i=0; i<4; i++){
         if (P->Pdfense[i].Name[0] != '\0'){
-            printf("%i. %s\n", i+1, P->Pdfense[i].Name);
+            printf(BLUE"%i. %s\n"RESET, i+1, P->Pdfense[i].Name);
         }
     }
     scanf("%i", &option);
@@ -531,7 +531,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
         getchar();
         return 2;
     }
-    if (P[attacker].equipped_weapon.crit_chance > rb(0,101)){
+    if (P[attacker].equipped_weapon.crit_chance > rb(0,100)){
         total_damage *= 2;
         printf(CYAN"%s's"RESET" weapon has CRIT and did double damage.\n", P[attacker].name);
     }
@@ -540,11 +540,11 @@ int UseWeaponItem(struct Player *P, int player_turn){
         float reduction;
         if (P[attacker].equipped_weapon.class_res==P[defender].equipped_defense.class_res || P[defender].equipped_defense.class_res==4){
             reduction = P[defender].equipped_defense.damage_reduction / 100.0;
-            printf(CYAN"%s's"RESET" defense of a matching class blocked"RED" %g "RESET"out of "RED" %g "RESET"damage", P[defender].name, total_damage*reduction, total_damage);
+            printf(CYAN"%s's"RESET" defense of a matching class blocked"RED" %g "RESET"out of "RED" %g "RESET"damage\n", P[defender].name, total_damage*reduction, total_damage);
         }
         else{
             reduction = P[defender].equipped_defense.damage_reduction / 200.0;
-            printf(CYAN"%s's"RESET" defense of a non-matching class blocked"RED"%g"RESET"out of "RED"%g"RESET"damage", P[defender].name, total_damage*reduction, total_damage);
+            printf(CYAN"%s's"RESET" defense of a non-matching class blocked "RED"%g"RESET" out of "RED"%g"RESET"damage\n", P[defender].name, total_damage*reduction, total_damage);
         }
         total_damage -= total_damage * reduction;
         /*if (P[defender].equipped_defense.defense_durability-total_damage/2<=0){         //Sees if you defense has broken and transfers that damage to you
@@ -661,26 +661,21 @@ int main(){
         {.name = "TURG",        .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
-    /*int chance=0;9
-     * r (int i=0; i<100; i++){
-        if (melee[4].crit_chance >= rb(0,101)){
-            chance++;
-        }
-    }
-    printf("%i", chance);
-    getchar();*/
 
-    /*Gotta get dat dev logo
+      //Gotta get dat dev logo
     printf("\nPress enter to continue\n"RED BOLD);
     print_ascii("ANDREW HELD HOSTAGE");
     printf(RESET);
     getchar();
     Clear();
-typewriter_print
+
     printf("Player 1, enter your name:\n");
-    scanf("%s", P[0].name);
+    fgets(P[0].name, sizeof(P[0].name), stdin); // Allows names with spaces
+    P[0].name[strcspn(P[0].name, "\n")] = 0;
     printf("\nPlayer 2, enter your name:\n");
-    scanf("%s", P[1].name); */
+    fgets(P[1].name, sizeof(P[0].name), stdin);
+    P[1].name[strcspn(P[1].name, "\n")] = 0;
+    // */
 
     while(1){
         Clear();
@@ -692,14 +687,14 @@ typewriter_print
                 break;
             case 2:
                 Clear();
-                int word = 0;
-                while(word<1||word>2){
-                    printf("Enter 1 to equip your weapon and 2 for your defence\n");
+                int word = -1;
+                while(word<0||word>2){
+                    printf("Enter 1 to equip your weapon, 2 for your defence, and 0 to go back\n");
                     scanf("%i", &word);
                     getchar();
                 }
                 if (word==1){EquipItem(&P[player_turn%2], player_turn);}
-                else{Equipdefense(&P[player_turn%2]);}
+                else if(word ==2){Equipdefense(&P[player_turn%2]);}
                 player_turn--;
                 break;
             case 3:
