@@ -300,6 +300,8 @@ struct Player{
     int times_rested;
     struct Weapon equipped_weapon;
     struct Weapon equipped_defense;
+    int status_effect;
+    int durration;
 };
 
 int SignsOfLife(struct Player x){
@@ -368,9 +370,9 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     // Allows buying (if affordable + space) and selling (half price refund)
     // Returns 0 if purchase/sell happened (consumes turn), 1 otherwise
     int option=0;
-    printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter or purchase from the shop\n\n"RESET);
+    printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter, but it does to purchase/sell from the shop\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
-    printf(CYAN"\n\nOffensive items"RESET);
+    printf(CYAN"\nOffensive items"RESET);
     printf(BOLD"\n%-3s%-20s%-10s%-10s%-10s%-10s%s\n"RESET,"", "Name", "Type", "Damage", "Crit %", "Cooldown", "Price");
     for (int i=0; i<17; i++){
         int notowened=1;
@@ -404,7 +406,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
             printf(BLUE"%-3i"RESET"%-20s%-20s%-15i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage_reduction, BLUE"OWNED"RESET);
         }
     }
-    printf("Enter 0 to leave the shop\n\n");
+    printf("Enter 0 to leave the shop\n");
     scanf("%i", &option);
     getchar();
     int type=0;
@@ -455,7 +457,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     }
     else if (doOption == 1 && w[option-1].money_cost <= x->gold && FullInventoryChecker(*x, type) != -1 && item_in_inventory(*x, w[option-1], type) == -1){
         int slot = FullInventoryChecker(*x, type);
-        printf("You have purchased "BLUE"%s\n"RESET, w[option-1].Name);
+        printf("You have purchased "BLUE"%s :]\n"RESET, w[option-1].Name);
         printf("You now have "YELLOW"%i"RESET" coins.\n", x->gold - w[option-1].money_cost);
         x->gold -= w[option-1].money_cost;
         if (type==4){
@@ -471,7 +473,7 @@ int Capitalism(struct Player *x, struct Weapon w[]){
         return 1;
     }
     else if (w[option-1].money_cost > x->gold){
-        printf("You are too poor to buy this item.\n");
+        printf("You are too poor to buy this item :(\n");
         getchar();getchar();
         return 1;
     }
@@ -543,6 +545,9 @@ int UseWeaponItem(struct Player *P, int player_turn){
     if (P[attacker].equipped_weapon.crit_chance > rb(0,100)){
         total_damage *= 1.5;
         printf(CYAN"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
+        if (P[attacker].equipped_weapon.class_res==1){
+            printf(CYAN"%s"RESET" adds the "RED"BLEEDING"RESET" effect to %s (-2 hp for the next 2 turns)", P[attacker].name, P[defender].name);
+        }
     }
     if (P[defender].equipped_defense.id != 0){
         float reduction;
@@ -595,7 +600,7 @@ int UseWeaponItem(struct Player *P, int player_turn){
 }
 
 void weapon_checkek(struct Player *x, int player_turn, struct Weapon master[]){
-    // Restore weapon IDs when cooldown expires (last_used + cooldown == player_turn)
+    // Restore weapon IDs when cooldown expires (if last_used + cooldown == player_turn)
     if (x->equipped_weapon.cooldown+x->equipped_weapon.last_used==player_turn){
         x->equipped_weapon.last_used=0;
         for (int j=0; j<17; j++){
@@ -651,7 +656,7 @@ int main(){
         {"everything armor",  "Storng-Special",       27,     .money_cost=  2500,   .damage_reduction=35, .class_res = 4},
     };
     struct Player P[2] = {
-        {.name = "Jim Pickens", .health = 100, .gold = 50000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
         {.name = "TURG",        .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
@@ -707,6 +712,9 @@ int main(){
         }
         P[player_turn%2].gold*=1.1;
         player_turn++;
+        if(P[player_turn%2].status_effect==1 && P[player_turn%2].durration+2!=player_turn){
+            P[player_turn%2].health-=2;
+        }
         // Check if the next player to act is dead; if so, print death/winner ASCII and end
         if (SignsOfLife(P[player_turn%2])==0){
             printf(RED"%s is \n\n", P[player_turn%2].name);
