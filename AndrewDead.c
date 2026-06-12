@@ -624,7 +624,7 @@ int main(){
         {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2},
         {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1},
-        {"Stink Bomb",         "Explosive",    4,    25,        1,            680,   .cooldown = 2, .class_res = 3},
+        {"Stink Bomb",         "Explosive",    4,    25,        1,            680,   .cooldown = 3, .class_res = 3},
         {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1},
         {"Baseball Bat",       "Blunt",        6,    15,       25,            400,   .cooldown = 2, .class_res = 2},
         {"Trick Knife",        "Sharp",        7,    17,       42,            551,   .cooldown = 2, .class_res = 1},
@@ -632,8 +632,8 @@ int main(){
         {"Murder Of Crowbars", "Blunt",        9,    28,       22,            640,   .cooldown = 2, .class_res = 2},
         {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 4, .class_res = 3},
         {"Crossedbow",         "Sharp",       11,    34,       32,           1000,   .cooldown = 2, .class_res = 1},
-        {"Leviathan Axe",      "Sharp",       12,    48,       28,           1350,   .cooldown = 4, .class_res = 1},
-        {"Rubber Ducky",       "Explosive",   13,    80,        3,           1799,   .cooldown = 7, .class_res = 3},
+        {"Leviathan Axe",      "Sharp",       12,    48,       28,           1350,   .cooldown = 3, .class_res = 1},
+        {"Rubber Ducky",       "Explosive",   13,    70,        3,           1799,   .cooldown = 7, .class_res = 3},
         {"Katana",             "Sharp",       14,    52,       45,           2200,   .cooldown = 3, .class_res = 1},
         {"Chainsword",         "Sharp",       15,    60,       22,           2500,   .cooldown = 4, .class_res = 1},
         {"Sledgehammer",       "Blunt",       16,    65,       28,           3000,   .cooldown = 4, .class_res = 2},
@@ -651,7 +651,7 @@ int main(){
         {"everything armor",  "Storng-Special",       27,     .money_cost=  2500,   .damage_reduction=35, .class_res = 4},
     };
     struct Player P[2] = {
-        {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "Jim Pickens", .health = 100, .gold = 50000, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
         {.name = "TURG",        .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
