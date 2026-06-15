@@ -544,7 +544,7 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
         return 2;
     }
     if (P[attacker].equipped_weapon.crit_chance > rb(0,100) &&
-        P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res){     //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
+    (P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res || P[defender].equipped_defense.class_res!=4)){     //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
         total_damage *= 1.5;
         printf(BLUE"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
         if (P[attacker].equipped_weapon.class_res==1){                                      // Bleeding effect
@@ -555,37 +555,26 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
 
         }
         if (P[attacker].equipped_weapon.class_res==2){
-            if (P[defender].equipped_defense.id>0){
-                printf(BLUE"%s"RESET" adds the "GREEN"BROKEN"RESET" effect to "CYAN"%s"RESET
-                    "(breaks their "BLUE"%s"RESET" defense)\n",
-                    P[attacker].name, P[defender].name, P[defender].equipped_defense.Name);
-                for (int i=0; i<4; i++){
-                    if(P[defender].Pdfense[i].id==P[defender].equipped_defense.id){
-                        memset(&P[defender].Pdfense[i], 0, sizeof(struct Weapon));
-                    }
+            int valid_slots[6], valid_count = 0;
+            for (int i = 0; i < 6; i++){
+                int pid = P[defender].Pweapon[i].id;
+                if (pid > 0 && pid != 1 && pid != 2){
+                    valid_slots[valid_count++] = i;
                 }
-                memset(&P[defender].equipped_defense, 0, sizeof(struct Weapon));
             }
-            else{
-                int ran = rb(0,5);
-                int breakables=0;
-                for (int i=0; i<6; i++){
-                    if (P[defender].Pweapon[i].id>2){breakables++;}
-                }
-                if (breakables<1){
-                    printf("No breakable weapons found in inventory, "GREEN"BROKEN"RESET" effect not applied");
-                }
-                else{
-                    while(P[defender].Pweapon[ran].id<=2){
-                        ran = rb(0,5);
-                    }
-                    printf(BLUE"%s"RESET" adds the "GREEN"BROKEN"RESET" effect to "CYAN"%s"RESET
-                        " (breaks their "BLUE"%s"RESET" weapon)\n",
-                        P[attacker].name, P[defender].name, P[defender].Pweapon[ran].Name);
-                    if (P[defender].equipped_weapon.id==P[defender].Pweapon[ran].id){
-                        memset(&P[defender].equipped_weapon, 0, sizeof(struct Weapon));
-                    }
-                    memset(&P[defender].Pweapon[ran], 0, sizeof(struct Weapon));
+            if (valid_count > 0){
+                int slot = valid_slots[rb(0, valid_count - 1)];
+                int inv_id = P[defender].Pweapon[slot].id;
+                printf(BLUE"%s"RESET" KNOCKS "CYAN"%s"RESET"'s "RED"%s"RESET" into cooldown!\n",
+                    P[attacker].name, P[defender].name, P[defender].Pweapon[slot].Name);
+                printf(BLUE"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left",
+                    P[defender].name, P[defender].Pweapon[slot].cooldown-1);
+                getchar();
+                P[defender].Pweapon[slot].last_used = player_turn + P[defender].Pweapon[slot].cooldown;
+                P[defender].Pweapon[slot].id = 0;
+                if (P[defender].equipped_weapon.id == inv_id){
+                    P[defender].equipped_weapon.id = 0;
+                    P[defender].equipped_weapon.last_used = player_turn - P[defender].equipped_weapon.cooldown;
                 }
             }
         }
@@ -696,7 +685,7 @@ int main(){
     struct Weapon melee[27] = {
     //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown           weekness
         {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2},
-        {"Rusty Sword",        "Sharp",        2,    10,       10,              0,   .cooldown = 1, .class_res = 1},
+        {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1},
         {"Stink Bomb",         "Explosive",    4,    25,        4,            620,   .cooldown = 3, .class_res = 3},
         {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1},
@@ -708,21 +697,21 @@ int main(){
         {"Crossedbow",         "Sharp",       11,    64,       32,           1000,   .cooldown = 2, .class_res = 1},
         {"Leviathan Axe",      "Sharp",       12,    70,       28,           1350,   .cooldown = 3, .class_res = 1},
         {"Rubber Ducky",       "Explosive",   13,    99,        3,           1799,   .cooldown = 7, .class_res = 3},
-        {"Katana",             "Sharp",       14,   152,       45,           2200,   .cooldown = 3, .class_res = 1},
-        {"Chainsword",         "Sharp",       15,   160,       22,           2500,   .cooldown = 4, .class_res = 1},
-        {"Sledgehammer",       "Blunt",       16,   165,       28,           3000,   .cooldown = 4, .class_res = 2},
-        {"BoomBoom Gun",       "Explosive",   17,   190,        5,           3500,   .cooldown = 4, .class_res = 3},
+        {"Katana",             "Sharp",       14,    92,       50,           2500,   .cooldown = 2, .class_res = 1},
+        {"Chainsword",         "Sharp",       15,   160,       22,           2900,   .cooldown = 2, .class_res = 1},
+        {"Sledgehammer",       "Blunt",       16,   165,       28,           3000,   .cooldown = 2, .class_res = 2},
+        {"BoomBoom Gun",       "Explosive",   17,   190,        5,           3500,   .cooldown = 2, .class_res = 3},
     //   Name                 Type                    ID                   Cost                Reduction            class identifier
-        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   150,   .damage_reduction=18, .class_res = 1},
-        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   160,   .damage_reduction=18, .class_res = 2},
-        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   132,   .damage_reduction=22, .class_res = 3},
-        {"knif-hat",          "Mid-Chainmail",        21,     .money_cost=   243,   .damage_reduction=32, .class_res = 1},
-        {"hurty hat",         "Mid-Kevlar",           22,     .money_cost=   261,   .damage_reduction=30, .class_res = 2},
-        {"kablosh hat",       "Mid-Bombsuit",         23,     .money_cost=   239,   .damage_reduction=38, .class_res = 3},
-        {"nif armer",         "Strong-Chainmail",     24,     .money_cost=   599,   .damage_reduction=50, .class_res = 1},
-        {"owie armor",        "Strong-Kevlar",        25,     .money_cost=   750,   .damage_reduction=55, .class_res = 2},
-        {"boom armoer",       "Strong-Bombgsuit",     26,     .money_cost=   740,   .damage_reduction=50, .class_res = 3},
-        {"everything armor",  "Storng-Special",       27,     .money_cost=  1500,   .damage_reduction=45, .class_res = 4},
+        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   150,   .damage_reduction=28, .class_res = 1},
+        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   160,   .damage_reduction=28, .class_res = 2},
+        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   132,   .damage_reduction=32, .class_res = 3},
+        {"knif-hat",          "Mid-Chainmail",        21,     .money_cost=   243,   .damage_reduction=42, .class_res = 1},
+        {"hurty hat",         "Mid-Kevlar",           22,     .money_cost=   261,   .damage_reduction=40, .class_res = 2},
+        {"kablosh hat",       "Mid-Bombsuit",         23,     .money_cost=   239,   .damage_reduction=48, .class_res = 3},
+        {"nif armer",         "Strong-Chainmail",     24,     .money_cost=   599,   .damage_reduction=60, .class_res = 1},
+        {"owie armor",        "Strong-Kevlar",        25,     .money_cost=   750,   .damage_reduction=65, .class_res = 2},
+        {"boom armoer",       "Strong-Bombgsuit",     26,     .money_cost=   740,   .damage_reduction=60, .class_res = 3},
+        {"everything armor",  "Storng-Special",       27,     .money_cost=  1500,   .damage_reduction=55, .class_res = 4},
     };
     struct Player P[2] = {
         {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
@@ -785,6 +774,7 @@ int main(){
         player_turn++;
         if (next_turn_checker==player_turn%2){
             status_timer++;
+            P[player_turn%2].gold*=1.1;
             next_turn_checker=(player_turn+1)%2;
         }
         // Check if the next player to act is dead; if so, print death/winner ASCII and end
