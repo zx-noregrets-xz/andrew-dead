@@ -304,7 +304,7 @@ struct Player{
     int durration;
 };
 
-int SignsOfLife(struct Player x){
+int SignsOfLife(struct Player x){   // one if they are alive, then zero
     if (x.health>0){return 1;}
     else{return 0;}
 }
@@ -319,13 +319,14 @@ int MainPmenu(struct Player x){
     scanf("%i", &option);
     getchar();
     return option;
-}
+}   // Main menu, shows a list with player stats and gives them the options and returns values to main
 
 void Rest(struct Player *x){
     Clear();
     x->gold += 100 + 50 * (x->times_rested);
     x->health += 9;
-    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 9 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n", 100 + 50 * (x->times_rested), x->gold, x->health);
+    printf("You have "GREEN "RESTED"RESET" and gained %i gold and 9 health\nCurrent "YELLOW"Gold"RESET": %i\nCurrent "RED"Health"RESET": %g\n",
+        100 + 50 * (x->times_rested), x->gold, x->health);
     getchar();
     x->times_rested++;
     if (x->times_rested>3){
@@ -542,12 +543,25 @@ int UseWeaponItem(struct Player *P, int player_turn){
         getchar();
         return 2;
     }
-    if (P[attacker].equipped_weapon.crit_chance > rb(0,100)){
+    if (P[attacker].equipped_weapon.crit_chance > rb(0,100) &&
+        P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res){     //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
         total_damage *= 1.5;
-        printf(CYAN"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
-        if (P[attacker].equipped_weapon.class_res==1){
-            printf(CYAN"%s"RESET" adds the "RED"BLEEDING"RESET" effect to %s (-2 hp for the next 2 turns)", P[attacker].name, P[defender].name);
+        printf(BLUE"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
+        if (P[attacker].equipped_weapon.class_res==1){                                      // Bleeding effect
+            printf(BLUE"%s"RESET" adds the "RED"BLEEDING"RESET" effect to "CYAN"%s"RESET
+                "(-2 hp for the next 2 turns)\n", P[attacker].name, P[defender].name);
+            P[defender].status_effect=1;
+            P[defender].durration=player_turn+1;
+
         }
+        if (P[attacker].equipped_weapon.class_res==2){                                      //
+            printf(BLUE"%s"RESET" adds the "RED"BLEEDING"RESET" effect to "CYAN"%s"RESET
+                "(-2 hp for the next 2 turns)\n", P[attacker].name, P[defender].name);
+            P[defender].status_effect=1;
+            P[defender].durration=player_turn+1;
+
+        }
+
     }
     if (P[defender].equipped_defense.id != 0){
         float reduction;
@@ -560,14 +574,14 @@ int UseWeaponItem(struct Player *P, int player_turn){
             printf(CYAN"%s's"RESET" defense of a non-matching class blocked "RED"%g"RESET" out of "RED"%g"RESET" damage\n", P[defender].name, total_damage*reduction, total_damage);
         }
         total_damage -= total_damage * reduction;
-        printf(BLUE"\n%s"RESET" did "RED"%g"RESET" damage to "BLUE"%s"RESET".\n\n",
+        printf(BLUE"\n%s"RESET" did "RED"%g"RESET" damage to "CYAN"%s"RESET".\n\n",
             P[attacker].name, total_damage, P[defender].name);
         printf("Old Health: "RED"%g"RESET"\nNew Health: "RED"%g"RESET, P[defender].health, P[defender].health-total_damage);
 
 
         P[defender].health -= total_damage;
         if (P[attacker].equipped_weapon.cooldown!=1){
-            printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
+            printf(BLUE"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
             getchar();
             P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
             for (int i=0; i<6; i++){
@@ -621,13 +635,31 @@ void weapon_checkek(struct Player *x, int player_turn, struct Weapon master[]){
     }
 }
 
+void apply_effects(struct Player *x, int player_turn){
+    if (x->durration<player_turn-1){
+        if(x->status_effect==1 && x->durration+4>=player_turn){
+            x->health-=2;
+            printf(CYAN"%s"RESET" lost 2 health from getting attacked and bled\n", x->name);
+            getchar();
+            Clear();
+        }
+        if(x->status_effect==2 && x->durration+4>=player_turn){
+            x->health-=2;
+            printf(CYAN"%s"RESET" lost 2 health from getting attacked and bled\n", x->name);
+            getchar();
+            Clear();
+        }
+    }
+
+}
+
 int main(){
     int option = 0;
     // Master list: 17 weapons (id 1-17), then 10 defense items (id 18-27)
     struct Weapon melee[27] = {
     //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown           weekness
         {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2},
-        {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1},
+        {"Rusty Sword",        "Sharp",        2,    10,       100,              0,   .cooldown = 1, .class_res = 1},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1},
         {"Stink Bomb",         "Explosive",    4,    25,        1,            680,   .cooldown = 3, .class_res = 3},
         {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1},
@@ -661,7 +693,7 @@ int main(){
     };
     int player_turn=0;
 
-    //Gotta get dat dev logo
+    /*//Gotta get dat dev logo
     printf("\nPress enter to continue\n"RED BOLD);
     print_ascii("ANDREW HELD HOSTAGE");
     printf(RESET);
@@ -678,9 +710,11 @@ int main(){
     // */
 
     // Main game loop: each iteration is one player's turn; alternates via player_turn%2
+    int c=player_turn%2;
     while(1){
         Clear();
         weapon_checkek(&P[player_turn%2],player_turn, melee);
+        apply_effects(&P[player_turn%2], player_turn);
         option = MainPmenu(P[player_turn%2]);
         switch (option){
             case 1:
@@ -694,34 +728,31 @@ int main(){
                     scanf("%i", &word);
                     getchar();
                 }
-                if (word==1){EquipItem(&P[player_turn%2], player_turn);}
-                else if(word ==2){Equipdefense(&P[player_turn%2]);}
+                if (word==1){EquipItem(&P[c], player_turn);}
+                else if(word ==2){Equipdefense(&P[c]);}
                 player_turn--;
                 break;
             case 3:
-                Rest(&P[player_turn%2]);
+                Rest(&P[c]);
                 break;
             case 4:
                 Clear();
-                if (Capitalism(&P[player_turn%2], melee)==1){player_turn--;}
+                if (Capitalism(&P[c], melee)==1){player_turn--;}
                 break;
             default:
                 printf("\nWrong, stupid!\nMake sure you enter AN ACUTAL OPTION, i'm skipping ur turn,\nyou waste of matter.");
                 getchar();
                 break;
         }
-        P[player_turn%2].gold*=1.1;
+        P[c].gold*=1.1;
         player_turn++;
-        if(P[player_turn%2].status_effect==1 && P[player_turn%2].durration+2!=player_turn){
-            P[player_turn%2].health-=2;
-        }
         // Check if the next player to act is dead; if so, print death/winner ASCII and end
-        if (SignsOfLife(P[player_turn%2])==0){
-            printf(RED"%s is \n\n", P[player_turn%2].name);
+        if (SignsOfLife(P[c])==0){
+            printf(RED"%s (health: %g) is \n\n", P[c].name, P[c].health);
             print_ascii("D E A D");
-            printf(GREEN"\n%s is the\n\n", P[(player_turn+1)%2].name);
+            printf(GREEN"%s (health: %g) is \n\n", P[player_turn+1%2].name, P[player_turn+1%2].health);
             print_ascii("W I N N E R");
             getchar();
             break;
         }
-    }return 0;}///actual is number - 254 for ANDREW HELD HOSTAGE
+    }return 0;}///actual is number -254 for ANDREW HELD HOSTAGE
