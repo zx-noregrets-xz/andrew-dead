@@ -289,6 +289,7 @@ struct Weapon{
     int coountdown;
     int class_res;
     int last_used;
+    int hitchance;
 };
 
 struct Player{
@@ -374,20 +375,20 @@ int Capitalism(struct Player *x, struct Weapon w[]){
     printf("Welcome to the "BLUE"SHOP"RESET", this is were you can purchase weapons and defesive items\n" BOLD"It doesn't consume a turn to enter, but it does to purchase/sell from the shop\n"RESET);
     printf("Your current balence is"YELLOW" %i gold"RESET, x->gold);
     printf(CYAN"\nOffensive items"RESET);
-    printf(BOLD"\n%-3s%-20s%-10s%-10s%-10s%-10s%s\n"RESET,"", "Name", "Type", "Damage", "Crit %", "Cooldown", "Price");
+    printf(BOLD"\n%-3s%-20s%-10s%-10s%-10s%-10s%-10s%s\n"RESET,"", "Name", "Type", "Damage", "Crit %", "Cooldown", "Hitchance", "Price");
     for (int i=0; i<17; i++){
         int notowened=1;
         if (item_in_inventory(*x, w[i], 6)>=0){
             notowened--;
         }
         if (notowened==1 && w[i].money_cost<=x->gold){
-            printf(GREEN"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].money_cost);
+            printf(GREEN"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i%-10i"GREEN"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].hitchance, w[i].money_cost);
         }
         else if (notowened==1 && w[i].money_cost>x->gold){
-            printf(RED"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].money_cost);
+            printf(RED"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i%-10i"RED"%i\n"RESET, i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].hitchance, w[i].money_cost);
         }
         else{
-            printf(BLUE"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, BLUE"OWNED"RESET);
+            printf(BLUE"%-3i"RESET"%-20s%-10s%-10i%-10i%-10i%-10i%s\n", i+1, w[i].Name, w[i].Type, w[i].damage, w[i].crit_chance, w[i].cooldown-1, w[i].hitchance, BLUE"OWNED"RESET);
         }
     }
     printf(CYAN"\nDefeeisive items"RESET);
@@ -543,6 +544,7 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
         getchar();
         return 2;
     }
+    if (P[attacker].equipped_weapon.hitchance > rb(0, 100)){
     if (P[attacker].equipped_weapon.crit_chance > rb(0,100) &&
     (P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res || P[defender].equipped_defense.class_res!=4)){     //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
         total_damage *= 1.5;
@@ -633,6 +635,22 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
             P[attacker].equipped_weapon.id=0;}
         else{getchar();}
     }
+    }
+    else{
+        printf("u missed\nnot ur fault, bad luck\n");
+        printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
+        getchar();
+        P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
+        for (int i=0; i<6; i++){
+            if (P[attacker].equipped_weapon.id==P[attacker].Pweapon[i].id){
+                P[attacker].Pweapon[i].id=0;
+                P[attacker].Pweapon[i].last_used=player_turn+P[attacker].Pweapon[i].cooldown;
+            }
+        }
+        getchar();
+        Clear();
+        return 2;
+    }
     return 1;
 }
 
@@ -684,23 +702,23 @@ int main(){
     // Master list: 17 weapons (id 1-17), then 10 defense items (id 18-27)
     struct Weapon melee[27] = {
     //  Name                   Type           ID   Damage    CritChance      Cost    Cooldown           weekness
-        {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2},
-        {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1},
-        {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1},
-        {"Stink Bomb",         "Explosive",    4,    25,        4,            620,   .cooldown = 3, .class_res = 3},
-        {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1},
-        {"Baseball Bat",       "Blunt",        6,    15,       25,            400,   .cooldown = 2, .class_res = 2},
-        {"Trick Knife",        "Sharp",        7,    17,       42,            549,   .cooldown = 2, .class_res = 1},
-        {"Person Beater",      "Blunt",        8,    22,       28,            600,   .cooldown = 2, .class_res = 2},
-        {"Murder Of Crowbars", "Blunt",        9,    28,       22,            640,   .cooldown = 2, .class_res = 2},
-        {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 4, .class_res = 3},
-        {"Crossedbow",         "Sharp",       11,    64,       32,           1000,   .cooldown = 2, .class_res = 1},
-        {"Leviathan Axe",      "Sharp",       12,    70,       28,           1350,   .cooldown = 3, .class_res = 1},
-        {"Rubber Ducky",       "Explosive",   13,    99,        3,           1799,   .cooldown = 7, .class_res = 3},
-        {"Katana",             "Sharp",       14,    92,       50,           2500,   .cooldown = 2, .class_res = 1},
-        {"Chainsword",         "Sharp",       15,   160,       22,           2900,   .cooldown = 2, .class_res = 1},
-        {"Sledgehammer",       "Blunt",       16,   165,       28,           3000,   .cooldown = 2, .class_res = 2},
-        {"BoomBoom Gun",       "Explosive",   17,   190,        5,           3500,   .cooldown = 2, .class_res = 3},
+        {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2, .hitchance = 100},
+        {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1, .hitchance = 100},
+        {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1, .hitchance = 69},
+        {"Stink Bomb",         "Explosive",    4,    30,        4,            620,   .cooldown = 3, .class_res = 3, .hitchance = 32},
+        {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1, .hitchance = 69},
+        {"Baseball Bat",       "Blunt",        6,    15,       25,            400,   .cooldown = 2, .class_res = 2, .hitchance = 79},
+        {"Trick Knife",        "Sharp",        7,    17,       42,            549,   .cooldown = 2, .class_res = 1, .hitchance = 67},
+        {"Person Beater",      "Blunt",        8,    22,       28,            600,   .cooldown = 2, .class_res = 2, .hitchance = 90},
+        {"Murder Of Crowbars", "Blunt",        9,    28,       22,            640,   .cooldown = 2, .class_res = 2, .hitchance = 82},
+        {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 3, .class_res = 3, .hitchance = 20},
+        {"Crossedbow",         "Sharp",       11,    64,       32,           1000,   .cooldown = 2, .class_res = 1, .hitchance = 60},
+        {"Leviathan Axe",      "Sharp",       12,    70,       28,           1350,   .cooldown = 3, .class_res = 1, .hitchance = 59},
+        {"Rubber Ducky",       "Explosive",   13,    99,        3,           1799,   .cooldown = 7, .class_res = 3, .hitchance = 50},
+        {"Katana",             "Sharp",       14,    92,       50,           2500,   .cooldown = 2, .class_res = 1, .hitchance = 70},
+        {"Chainsword",         "Sharp",       15,   160,       22,           2900,   .cooldown = 2, .class_res = 1, .hitchance = 65},
+        {"Sledgehammer",       "Blunt",       16,   165,       28,           3000,   .cooldown = 2, .class_res = 2, .hitchance = 70},
+        {"BoomBoom Gun",       "Explosive",   17,   190,        5,           3500,   .cooldown = 2, .class_res = 3, .hitchance = 10},
     //   Name                 Type                    ID                   Cost                Reduction            class identifier
         {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   150,   .damage_reduction=28, .class_res = 1},
         {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   160,   .damage_reduction=28, .class_res = 2},
@@ -711,17 +729,17 @@ int main(){
         {"nif armer",         "Strong-Chainmail",     24,     .money_cost=   599,   .damage_reduction=60, .class_res = 1},
         {"owie armor",        "Strong-Kevlar",        25,     .money_cost=   750,   .damage_reduction=65, .class_res = 2},
         {"boom armoer",       "Strong-Bombgsuit",     26,     .money_cost=   740,   .damage_reduction=60, .class_res = 3},
-        {"everything armor",  "Storng-Special",       27,     .money_cost=  1500,   .damage_reduction=55, .class_res = 4},
+        {"everything armor",  "Storng-Special",       27,     .money_cost=  1500,   .damage_reduction=60, .class_res = 4},
     };
     struct Player P[2] = {
         {.name = "Jim Pickens", .health = 100, .gold = 500, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
-        {.name = "TURG",        .health = 100, .gold = 550, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
+        {.name = "TURG",        .health = 100, .gold = 600, .Pweapon = {melee[0], melee[1]}, .times_rested = 0},
     };
     int player_turn=0;
     int status_timer=0, next_turn_checker=0;
-    /*//Gotta get dat dev logo
+    //Gotta get dat dev logo
     printf("\nPress enter to continue\n"RED BOLD);
-    print_ascii("ANDREW HELD HOSTAGE");
+    print_ascii("IM TIERD");
     printf(RESET);
     getchar();
     Clear();
