@@ -544,25 +544,25 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
     }
     if (P[attacker].equipped_weapon.hitchance > rb(0, 100)){
     if (P[attacker].equipped_weapon.crit_chance > rb(0,100) &&
-    (P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res || P[defender].equipped_defense.class_res!=4)){     //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
+    (P[attacker].equipped_weapon.class_res!=P[defender].equipped_defense.class_res || P[defender].equipped_defense.class_res!=4)){    //Checks if weapon crits and applies effect if it did, if the defender has a matching defense, it can't crit.
         total_damage *= 1.5;
         printf(BLUE"%s's"RESET" weapon has CRIT and did "BOLD"1.5x"RESET" damage.\n", P[attacker].name);
-        if (P[attacker].equipped_weapon.class_res==1){                                      // Bleeding effect
+        if (P[attacker].equipped_weapon.class_res==1){        // Bleeding effect for sharp weapons                              // Bleeding effect
             printf(BLUE"%s"RESET" adds the "RED"BLEEDING"RESET" effect to "CYAN"%s"RESET
-                "(-2 hp for the next 3 turns including this one)\n", P[attacker].name, P[defender].name);
+                "(-3 hp for the next 3 turns including this one)\n", P[attacker].name, P[defender].name);
             P[defender].status_effect=1;
             P[defender].durration=status_timer+1;
 
         }
         if (P[attacker].equipped_weapon.class_res==2){
             int valid_slots[6], valid_count = 0;
-            for (int i = 0; i < 6; i++){
+            for (int i = 0; i < 6; i++){                    //finds the valid weapons to apply knockback to
                 int pid = P[defender].Pweapon[i].id;
                 if (pid > 0 && pid != 1 && pid != 2){
                     valid_slots[valid_count++] = i;
                 }
             }
-            if (valid_count > 0){
+            if (valid_count > 0){       // if there are valid weapons, puts a random one into cooldown
                 int slot = valid_slots[rb(0, valid_count - 1)];
                 int inv_id = P[defender].Pweapon[slot].id;
                 printf(BLUE"%s"RESET" KNOCKS "CYAN"%s"RESET"'s "RED"%s"RESET" into cooldown!\n",
@@ -578,7 +578,8 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
                 }
             }
         }
-        if (P[attacker].equipped_weapon.class_res==3){
+
+        if (P[attacker].equipped_weapon.class_res==3){      // stun effect for explosive weapons
             printf(BLUE"%s"RESET" adds the "YELLOW"STUN"RESET" effect to "CYAN"%s"RESET
                 "(skips their turn)\n", P[attacker].name, P[defender].name);
             P[defender].status_effect=3;
@@ -637,7 +638,7 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
     else{
         printf("u missed\nnot ur fault, bad luck\n");
         printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
-        printf(BOLD"It's still your turn, you can equip another weapon and try again or rest or smth"RESET);
+        printf(BOLD"\nIt's still your turn, you can equip another weapon and try again or rest or smth"RESET);
         getchar();
         P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
         for (int i=0; i<6; i++){
@@ -678,7 +679,7 @@ void weapon_checkek(struct Player *x, int player_turn, struct Weapon master[]){
 void apply_effects(struct Player *x, int *status_timer){
     if(x->status_effect==1){
         if(*status_timer>=x->durration && *status_timer<=x->durration+4){
-            x->health-=2;
+            x->health-=3;
             printf(CYAN"%s"RESET" lost 2 health from getting attacked and bled\n", x->name);
             getchar();
             Clear();
@@ -704,13 +705,13 @@ int main(){
         {"Fists",              "Blunt",        1,     5,       15,              0,   .cooldown = 1, .class_res = 2, .hitchance = 100},
         {"Rusty Sword",        "Sharp",        2,    10,       18,              0,   .cooldown = 1, .class_res = 1, .hitchance = 100},
         {"Kitchen Knife",      "Sharp",        3,    12,       20,            200,   .cooldown = 2, .class_res = 1, .hitchance = 69},
-        {"Stink Bomb",         "Explosive",    4,    30,        4,            620,   .cooldown = 3, .class_res = 3, .hitchance = 32},
+        {"Stink Bomb",         "Explosive",    4,    30,        4,            620,   .cooldown = 3, .class_res = 3, .hitchance = 42},
         {"Metal Hatchet",      "Sharp",        5,    14,       40,            420,   .cooldown = 2, .class_res = 1, .hitchance = 69},
         {"Baseball Bat",       "Blunt",        6,    15,       25,            400,   .cooldown = 2, .class_res = 2, .hitchance = 79},
         {"Trick Knife",        "Sharp",        7,    17,       42,            549,   .cooldown = 2, .class_res = 1, .hitchance = 67},
         {"Person Beater",      "Blunt",        8,    22,       28,            600,   .cooldown = 2, .class_res = 2, .hitchance = 90},
         {"Murder Of Crowbars", "Blunt",        9,    28,       22,            640,   .cooldown = 2, .class_res = 2, .hitchance = 82},
-        {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 3, .class_res = 3, .hitchance = 20},
+        {"Pipe Bomb",          "Explosive",   10,    40,        5,            800,   .cooldown = 3, .class_res = 3, .hitchance = 40},
         {"Crossedbow",         "Sharp",       11,    64,       32,           1000,   .cooldown = 2, .class_res = 1, .hitchance = 60},
         {"Leviathan Axe",      "Sharp",       12,    70,       28,           1350,   .cooldown = 3, .class_res = 1, .hitchance = 59},
         {"Rubber Ducky",       "Explosive",   13,    99,        3,           1799,   .cooldown = 7, .class_res = 3, .hitchance = 50},
@@ -719,9 +720,9 @@ int main(){
         {"Sledgehammer",       "Blunt",       16,   165,       28,           3000,   .cooldown = 2, .class_res = 2, .hitchance = 70},
         {"BoomBoom Gun",       "Explosive",   17,   190,        5,           3500,   .cooldown = 2, .class_res = 3, .hitchance = 10},
     //   Name                 Type                    ID                   Cost                Reduction            class identifier
-        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   150,   .damage_reduction=28, .class_res = 1},
-        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   160,   .damage_reduction=28, .class_res = 2},
-        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   132,   .damage_reduction=32, .class_res = 3},
+        {"Knif-vest",         "Light-Chainmail",      18,     .money_cost=   150,   .damage_reduction=28, .class_res = 1},// Chainmail blocks the full reduction value against Sharp weapons, if a non-Sharp weapons attacks, it blocks half the reduction value
+        {"hurty-vest",        "Light-Kevlar",         19,     .money_cost=   160,   .damage_reduction=28, .class_res = 2},// Kevlar blocks the full reduction value against Blunt weapons, if a non-Blunt weapons attacks, it blocks half the reduction value
+        {"bombom suit",       "Light-Bombsuit",       20,     .money_cost=   132,   .damage_reduction=32, .class_res = 3},// Bombsuit blocks the full reduction value against Explosive weapons, if a non-Explosive weapons attacks, it blocks half the reduction value
         {"knif-hat",          "Mid-Chainmail",        21,     .money_cost=   243,   .damage_reduction=42, .class_res = 1},
         {"hurty hat",         "Mid-Kevlar",           22,     .money_cost=   261,   .damage_reduction=40, .class_res = 2},
         {"kablosh hat",       "Mid-Bombsuit",         23,     .money_cost=   239,   .damage_reduction=48, .class_res = 3},
@@ -737,7 +738,7 @@ int main(){
     int player_turn=0;
     int status_timer=0, next_turn_checker=0;
     //Gotta get dat dev logo
-    printf("\nPress enter to continue\n"RED BOLD);
+    printf("\nPress enter to continue\n"BLUE BOLD);
     print_ascii("IM TIERD");
     printf(RESET);
     getchar();
