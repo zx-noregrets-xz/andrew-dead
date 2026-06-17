@@ -1,7 +1,5 @@
-#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <threads.h>
 #include <unistd.h>
 #include <string.h>
 #define RESET     "\x1b[0m"
@@ -639,6 +637,7 @@ int UseWeaponItem(struct Player *P, int player_turn, int status_timer){
     else{
         printf("u missed\nnot ur fault, bad luck\n");
         printf(CYAN"\n%s"RESET"'s weapon is now on COOLDOWN with "CYAN"%i"RESET" turns left", P[attacker].name, P[attacker].equipped_weapon.cooldown-1);
+        printf(BOLD"It's still your turn, you can equip another weapon and try again or rest or smth"RESET);
         getchar();
         P[attacker].equipped_weapon.last_used=player_turn-P[attacker].equipped_weapon.cooldown;
         for (int i=0; i<6; i++){
@@ -788,7 +787,6 @@ int main(){
                 getchar();
                 break;
         }
-        //P[c].gold*=1.1;
         player_turn++;
         if (next_turn_checker==player_turn%2){
             status_timer++;
@@ -804,4 +802,4 @@ int main(){
             getchar();
             break;
         }
-    }return 0;}///actual is number -254 for ANDREW HELD HOSTAGE
+    }return 0;}///actual is number -254 for title print
